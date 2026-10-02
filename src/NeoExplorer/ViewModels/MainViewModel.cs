@@ -8,6 +8,14 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly NavigationHistory _history = new(PathParser.ThisPC);
 
+    public MainViewModel()
+    {
+        Folder = new FolderViewModel(Navigate);
+        _ = Folder.LoadAsync(CurrentLocation);
+    }
+
+    public FolderViewModel Folder { get; }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Segments), nameof(FolderName), nameof(SearchPlaceholder))]
     [NotifyCanExecuteChangedFor(nameof(GoBackCommand), nameof(GoForwardCommand), nameof(GoUpCommand))]
@@ -61,8 +69,7 @@ public partial class MainViewModel : ObservableObject
     private bool CanGoUp() => PathParser.GetParent(CurrentLocation) is not null;
 
     [RelayCommand]
-    private void Refresh()
-    {
-        // Reloads the folder content once the folder view exists (phase 4).
-    }
+    private void Refresh() => _ = Folder.LoadAsync(CurrentLocation);
+
+    partial void OnCurrentLocationChanged(string value) => _ = Folder.LoadAsync(value);
 }

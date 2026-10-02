@@ -14,6 +14,7 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         InitializeComponent();
+        FolderView.ViewModel = ViewModel.Folder;
 
         // Mouse back/forward buttons, even when a child control already handled the click.
         AddHandler(PointerPressedEvent, new PointerEventHandler(OnPointerPressed), handledEventsToo: true);
@@ -29,6 +30,16 @@ public sealed partial class MainPage : Page
         else if (properties.IsXButton2Pressed && ViewModel.GoForwardCommand.CanExecute(null))
         {
             ViewModel.GoForwardCommand.Execute(null);
+        }
+    }
+
+    private void Page_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        // Backspace goes back, unless a text box already used it for editing.
+        if (e.Key == VirtualKey.Back && ViewModel.GoBackCommand.CanExecute(null))
+        {
+            e.Handled = true;
+            ViewModel.GoBackCommand.Execute(null);
         }
     }
 

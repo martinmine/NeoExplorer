@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="NeoExplorer.Views.FolderView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:NeoExplorer.ViewModels">
+
+    <UserControl.Resources>
+        <!-- Column widths shared by the header and the rows. Name takes the remaining space. -->
+        <GridLength x:Key="DateModifiedColumnWidth">170</GridLength>
+        <GridLength x:Key="TypeColumnWidth">200</GridLength>
+        <GridLength x:Key="SizeColumnWidth">110</GridLength>
+
+        <Style x:Key="ColumnHeaderStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+
+        <Style x:Key="SortGlyphStyle" TargetType="FontIcon">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Padding lines the header up with the ListViewItem content below. -->
+        <Grid Padding="12,4,16,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="{StaticResource DateModifiedColumnWidth}" />
+                <ColumnDefinition Width="{StaticResource TypeColumnWidth}" />
+                <ColumnDefinition Width="{StaticResource SizeColumnWidth}" />
+            </Grid.ColumnDefinitions>
+
+            <Button
+                x:Name="NameHeader"
+                AutomationProperties.Name="Sort by Name"
+                Click="ColumnHeader_Click"
+                Style="{StaticResource ColumnHeaderStyle}"
+                Tag="Name">
+                <Grid>
+                    <TextBlock Text="Name" />
+                    <FontIcon Glyph="{x:Bind ViewModel.NameSortGlyph, Mode=OneWay}" Style="{StaticResource SortGlyphStyle}" />
+                </Grid>
+            </Button>
+            <Button
+                x:Name="DateModifiedHeader"
+                Grid.Column="1"
+                AutomationProperties.Name="Sort by Date modified"
+                Click="ColumnHeader_Click"
+                Style="{StaticResource ColumnHeaderStyle}"
+                Tag="DateModified">
+                <Grid>
+                    <TextBlock Text="Date modified" />
+                    <FontIcon Glyph="{x:Bind ViewModel.DateModifiedSortGlyph, Mode=OneWay}" Style="{StaticResource SortGlyphStyle}" />
+                </Grid>
+            </Button>
+            <Button
+                x:Name="TypeHeader"
+                Grid.Column="2"
+                AutomationProperties.Name="Sort by Type"
+                Click="ColumnHeader_Click"
+                Style="{StaticResource ColumnHeaderStyle}"
+                Tag="Type">
+                <Grid>
+                    <TextBlock Text="Type" />
+                    <FontIcon Glyph="{x:Bind ViewModel.TypeSortGlyph, Mode=OneWay}" Style="{StaticResource SortGlyphStyle}" />
+                </Grid>
+            </Button>
+            <Button
+                x:Name="SizeHeader"
+                Grid.Column="3"
+                AutomationProperties.Name="Sort by Size"
+                Click="ColumnHeader_Click"
+                Style="{StaticResource ColumnHeaderStyle}"
+                Tag="Size">
+                <Grid>
+                    <TextBlock Text="Size" />
+                    <FontIcon Glyph="{x:Bind ViewModel.SizeSortGlyph, Mode=OneWay}" Style="{StaticResource SortGlyphStyle}" />
+                </Grid>
+            </Button>
+        </Grid>
+
+        <ListView
+            x:Name="ItemsList"
+            Grid.Row="1"
+            AutomationProperties.Name="Items"
+            ContainerContentChanging="ItemsList_ContainerContentChanging"
+            DoubleTapped="ItemsList_DoubleTapped"
+            ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}"
+            KeyDown="ItemsList_KeyDown"
+            SelectionMode="Extended">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                    <Setter Property="MinHeight" Value="32" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="vm:ItemViewModel">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="{StaticResource DateModifiedColumnWidth}" />
+                            <ColumnDefinition Width="{StaticResource TypeColumnWidth}" />
+                            <ColumnDefinition Width="{StaticResource SizeColumnWidth}" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Image
+                                Width="16"
+                                Height="16"
+                                Source="{x:Bind Icon, Mode=OneWay}" />
+                            <TextBlock
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind Name}"
+                                TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                        <TextBlock
+                            Grid.Column="1"
+                            Margin="8,0"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind DateModified}" />
+                        <TextBlock
+                            Grid.Column="2"
+                            Margin="8,0"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind Type}"
+                            TextTrimming="CharacterEllipsis" />
+                        <TextBlock
+                            Grid.Column="3"
+                            Margin="8,0"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind Size}"
+                            TextAlignment="Right" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <TextBlock
+            x:Name="MessageText"
+            Grid.Row="1"
+            Margin="20,8"
+            HorizontalAlignment="Left"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="{x:Bind ViewModel.Message, Mode=OneWay}"
+            TextWrapping="Wrap" />
+    </Grid>
+</UserControl>

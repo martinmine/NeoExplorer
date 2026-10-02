@@ -6,6 +6,8 @@ public sealed class FolderReaderTests : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("NeoExplorerTests").FullName;
 
+    private static string TypeName(FileSystemInfo info) => info is DirectoryInfo ? "File folder" : info.Extension;
+
     public void Dispose()
     {
         Directory.Delete(_root, recursive: true);
@@ -20,14 +22,15 @@ public sealed class FolderReaderTests : IDisposable
         var modified = new DateTime(2026, 5, 22, 8, 25, 0);
         File.SetLastWriteTime(file, modified);
 
-        var items = FolderReader.Read(_root).OrderBy(i => i.Name).ToList();
+        var items = FolderReader.Read(_root, TypeName).OrderBy(i => i.Name).ToList();
 
         Assert.Equal(2, items.Count);
-        Assert.Equal(new FileSystemItem("notes.txt", file, false, modified, 5), items[0]);
+        Assert.Equal(new FileSystemItem("notes.txt", file, false, modified, 5, ".txt"), items[0]);
         Assert.Equal("Photos", items[1].Name);
         Assert.Equal(folder, items[1].Path);
         Assert.True(items[1].IsFolder);
         Assert.Null(items[1].Size);
+        Assert.Equal("File folder", items[1].Type);
     }
 
     [Fact]
@@ -41,7 +44,7 @@ public sealed class FolderReaderTests : IDisposable
         File.SetAttributes(hidden, FileAttributes.Hidden);
         File.SetAttributes(system, FileAttributes.System);
 
-        var items = FolderReader.Read(_root);
+        var items = FolderReader.Read(_root, TypeName);
 
         Assert.Equal("visible.txt", Assert.Single(items).Name);
     }
@@ -49,13 +52,13 @@ public sealed class FolderReaderTests : IDisposable
     [Fact]
     public void Read_EmptyFolder_ReturnsEmptyList()
     {
-        Assert.Empty(FolderReader.Read(_root));
+        Assert.Empty(FolderReader.Read(_root, TypeName));
     }
 
     [Fact]
     public void Read_MissingFolder_Throws()
     {
-        Assert.Throws<DirectoryNotFoundException>(() => FolderReader.Read(Path.Combine(_root, "missing")));
+        Assert.Throws<DirectoryNotFoundException>(() => FolderReader.Read(Path.Combine(_root, "missing"), TypeName));
     }
 
     [Fact]
@@ -95,6 +98,6 @@ public sealed class FolderReaderTests : IDisposable
     {
         File.WriteAllText(Path.Combine(_root, "a.txt"), "");
 
-        Assert.Throws<OperationCanceledException>(() => FolderReader.Read(_root, new CancellationToken(canceled: true)));
+        Assert.Throws<OperationCanceledException>(() => FolderReader.Read(_root, TypeName, new CancellationToken(canceled: true)));
     }
 }

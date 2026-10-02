@@ -3,7 +3,7 @@ namespace NeoExplorer.Core;
 /// <summary>
 /// A file or folder in a directory listing. <see cref="Size"/> is null for folders.
 /// </summary>
-public record FileSystemItem(string Name, string Path, bool IsFolder, DateTime DateModified, long? Size);
+public record FileSystemItem(string Name, string Path, bool IsFolder, DateTime DateModified, long? Size, string Type);
 
 public static class FolderReader
 {
@@ -15,18 +15,18 @@ public static class FolderReader
 
     /// <summary>
     /// Lists the files and folders in a directory, skipping hidden and system items like File Explorer does.
+    /// <paramref name="getTypeName"/> provides the Type column text, e.g. "Text Document".
     /// This is blocking; call it from a background thread.
     /// </summary>
-    public static IReadOnlyList<FileSystemItem> Read(string path, CancellationToken cancellationToken = default)
+    public static IReadOnlyList<FileSystemItem> Read(string path, Func<FileSystemInfo, string> getTypeName, CancellationToken cancellationToken = default)
     {
         var items = new List<FileSystemItem>();
         foreach (FileSystemInfo info in new DirectoryInfo(path).EnumerateFileSystemInfos("*", Options))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            items.Add(info is FileInfo file
-                ? new FileSystemItem(file.Name, file.FullName, false, file.LastWriteTime, file.Length)
-                : new FileSystemItem(info.Name, info.FullName, true, info.LastWriteTime, null));
+            long? size = info is FileInfo file ? file.Length : null;
+            items.Add(new FileSystemItem(info.Name, info.FullName, size is null, info.LastWriteTime, size, getTypeName(info)));
         }
 
         return items;
