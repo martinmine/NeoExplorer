@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "NeoExplorer (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "NeoExplorer (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
