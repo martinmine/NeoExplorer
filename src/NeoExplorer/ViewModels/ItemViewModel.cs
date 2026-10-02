@@ -9,7 +9,7 @@ namespace NeoExplorer.ViewModels;
 
 public partial class ItemViewModel(FileSystemItem item) : ObservableObject
 {
-    private bool _iconRequested;
+    private uint _iconSize;
 
     public FileSystemItem Item { get; } = item;
 
@@ -25,26 +25,35 @@ public partial class ItemViewModel(FileSystemItem item) : ObservableObject
     public partial ImageSource? Icon { get; private set; }
 
     /// <summary>
-    /// Loads the icon the first time the item scrolls into view. Must be called on the UI thread.
+    /// Loads the icon when the item scrolls into view, or when the view needs a different size.
+    /// Sizes above 16 get thumbnails, e.g. photo previews. Must be called on the UI thread.
     /// </summary>
-    public async Task LoadIconAsync()
+    public async Task LoadIconAsync(uint size)
     {
-        if (_iconRequested)
+        if (_iconSize == size)
         {
             return;
         }
 
-        _iconRequested = true;
+        _iconSize = size;
         try
         {
             IStorageItemProperties storageItem = Item.IsFolder
                 ? await StorageFolder.GetFolderFromPathAsync(Item.Path)
                 : await StorageFile.GetFileFromPathAsync(Item.Path);
-            using StorageItemThumbnail? thumbnail = await storageItem.GetThumbnailAsync(ThumbnailMode.ListView, 16, ThumbnailOptions.UseCurrentScale);
-            if (thumbnail is not null)
+            var mode = size <= 16 ? ThumbnailMode.ListView : ThumbnailMode.SingleItem;
+            using StorageItemThumbnail? thumbnail = await storageItem.GetThumbnailAsync(mode, size, ThumbnailOptions.UseCurrentScale);
+            if (thumbnail is null || _iconSize != size)
             {
-                var bitmap = new BitmapImage();
-                await bitmap.SetSourceAsync(thumbnail);
+                return;
+            }
+
+            var bitmap = new BitmapImage();
+            await bitmap.SetSourceAsync(thumbnail);
+
+            // Skip if the view switched to another size while this one was loading.
+            if (_iconSize == size)
+            {
                 Icon = bitmap;
             }
         }

@@ -69,7 +69,7 @@ public partial class MainViewModel : ObservableObject
     private bool CanGoUp() => PathParser.GetParent(CurrentLocation) is not null;
 
     [RelayCommand]
-    private void Refresh() => _ = Folder.LoadAsync(CurrentLocation);
+    private void Refresh() => _ = Folder.RefreshAsync();
 
     partial void OnCurrentLocationChanged(string value) => _ = Folder.LoadAsync(value);
 }

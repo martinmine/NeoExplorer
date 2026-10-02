@@ -27,14 +27,74 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid>
+    <!-- Same shortcuts as File Explorer. -->
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator Key="Number1" Modifiers="Control,Shift" Invoked="ViewShortcut_Invoked" />
+        <KeyboardAccelerator Key="Number2" Modifiers="Control,Shift" Invoked="ViewShortcut_Invoked" />
+        <KeyboardAccelerator Key="Number3" Modifiers="Control,Shift" Invoked="ViewShortcut_Invoked" />
+        <KeyboardAccelerator Key="Number6" Modifiers="Control,Shift" Invoked="ViewShortcut_Invoked" />
+    </UserControl.KeyboardAccelerators>
+
+    <Grid x:Name="Root">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Padding lines the header up with the ListViewItem content below. -->
-        <Grid Padding="12,4,16,0">
+        <Grid.ContextFlyout>
+            <MenuFlyout Opening="ContextMenu_Opening">
+                <MenuFlyoutSubItem x:Name="ViewMenu" Text="View">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE890;" />
+                    </MenuFlyoutSubItem.Icon>
+                    <RadioMenuFlyoutItem
+                        Click="ViewMenuItem_Click"
+                        GroupName="ViewMode"
+                        KeyboardAcceleratorTextOverride="Ctrl+Shift+1"
+                        Tag="ExtraLargeIcons"
+                        Text="Extra large icons" />
+                    <RadioMenuFlyoutItem
+                        Click="ViewMenuItem_Click"
+                        GroupName="ViewMode"
+                        KeyboardAcceleratorTextOverride="Ctrl+Shift+2"
+                        Tag="LargeIcons"
+                        Text="Large icons" />
+                    <RadioMenuFlyoutItem
+                        Click="ViewMenuItem_Click"
+                        GroupName="ViewMode"
+                        KeyboardAcceleratorTextOverride="Ctrl+Shift+3"
+                        Tag="MediumIcons"
+                        Text="Medium icons" />
+                    <RadioMenuFlyoutItem
+                        Click="ViewMenuItem_Click"
+                        GroupName="ViewMode"
+                        KeyboardAcceleratorTextOverride="Ctrl+Shift+6"
+                        Tag="Details"
+                        Text="Details" />
+                </MenuFlyoutSubItem>
+                <MenuFlyoutSubItem x:Name="SortMenu" Text="Sort by">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE8CB;" />
+                    </MenuFlyoutSubItem.Icon>
+                    <RadioMenuFlyoutItem Click="SortMenuItem_Click" GroupName="SortColumn" Tag="Name" Text="Name" />
+                    <RadioMenuFlyoutItem Click="SortMenuItem_Click" GroupName="SortColumn" Tag="DateModified" Text="Date modified" />
+                    <RadioMenuFlyoutItem Click="SortMenuItem_Click" GroupName="SortColumn" Tag="Type" Text="Type" />
+                    <RadioMenuFlyoutItem Click="SortMenuItem_Click" GroupName="SortColumn" Tag="Size" Text="Size" />
+                    <MenuFlyoutSeparator />
+                    <RadioMenuFlyoutItem Click="SortMenuItem_Click" GroupName="SortDirection" Tag="Ascending" Text="Ascending" />
+                    <RadioMenuFlyoutItem Click="SortMenuItem_Click" GroupName="SortDirection" Tag="Descending" Text="Descending" />
+                </MenuFlyoutSubItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem Click="Refresh_Click" KeyboardAcceleratorTextOverride="F5" Text="Refresh">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE72C;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+            </MenuFlyout>
+        </Grid.ContextFlyout>
+
+        <!-- Details view column headers. Padding lines them up with the ListViewItem content below. -->
+        <Grid Padding="12,4,16,0" Visibility="{x:Bind ViewModel.IsDetailsView, Mode=OneWay}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="{StaticResource DateModifiedColumnWidth}" />
@@ -95,11 +155,12 @@
             x:Name="ItemsList"
             Grid.Row="1"
             AutomationProperties.Name="Items"
-            ContainerContentChanging="ItemsList_ContainerContentChanging"
-            DoubleTapped="ItemsList_DoubleTapped"
+            ContainerContentChanging="Items_ContainerContentChanging"
+            DoubleTapped="Items_DoubleTapped"
             ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}"
-            KeyDown="ItemsList_KeyDown"
-            SelectionMode="Extended">
+            KeyDown="Items_KeyDown"
+            SelectionMode="Extended"
+            Visibility="{x:Bind ViewModel.IsDetailsView, Mode=OneWay}">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
                     <Setter Property="MinHeight" Value="32" />
@@ -154,6 +215,46 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+
+        <!-- Icon views. The tile size is set from code for medium, large and extra large icons. -->
+        <GridView
+            x:Name="IconsGrid"
+            Grid.Row="1"
+            Padding="12,8"
+            AutomationProperties.Name="Items"
+            ContainerContentChanging="Items_ContainerContentChanging"
+            DoubleTapped="Items_DoubleTapped"
+            ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}"
+            KeyDown="Items_KeyDown"
+            SelectionMode="Extended"
+            Visibility="{x:Bind ViewModel.IsIconView, Mode=OneWay}">
+            <GridView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsWrapGrid Loaded="IconsPanel_Loaded" Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </GridView.ItemsPanel>
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="vm:ItemViewModel">
+                    <Grid Padding="4" RowSpacing="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="40" />
+                        </Grid.RowDefinitions>
+                        <Image
+                            VerticalAlignment="Bottom"
+                            Source="{x:Bind Icon, Mode=OneWay}"
+                            Stretch="Uniform" />
+                        <TextBlock
+                            Grid.Row="1"
+                            MaxLines="2"
+                            Text="{x:Bind Name}"
+                            TextAlignment="Center"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="Wrap" />
+                    </Grid>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
 
         <TextBlock
             x:Name="MessageText"

@@ -11,11 +11,12 @@ namespace NeoExplorer.ViewModels;
 /// </summary>
 public partial class FolderViewModel(Action<string> navigate) : ObservableObject
 {
-    private const string UpGlyph = "";
-    private const string DownGlyph = "";
+    private const string UpGlyph = "\uE70E";
+    private const string DownGlyph = "\uE70D";
 
     private IReadOnlyList<ItemViewModel> _allItems = [];
     private CancellationTokenSource? _loading;
+    private string _location = PathParser.ThisPC;
 
     [ObservableProperty]
     public partial IReadOnlyList<ItemViewModel> Items { get; private set; } = [];
@@ -42,11 +43,33 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
 
     public string SizeSortGlyph => SortGlyph(SortColumn.Size);
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDetailsView), nameof(IsIconView), nameof(IconSize))]
+    public partial ViewMode ViewMode { get; set; }
+
+    public bool IsDetailsView => ViewMode == ViewMode.Details;
+
+    public bool IsIconView => !IsDetailsView;
+
+    /// <summary>
+    /// Icon size in DPI-independent pixels for the current view.
+    /// </summary>
+    public uint IconSize => ViewMode switch
+    {
+        ViewMode.MediumIcons => 48,
+        ViewMode.LargeIcons => 96,
+        ViewMode.ExtraLargeIcons => 256,
+        _ => 16,
+    };
+
+    public void Zoom(int steps) => ViewMode = ViewModes.Zoom(ViewMode, steps);
+
     /// <summary>
     /// Loads a location on a background thread. Starting a new load cancels the previous one.
     /// </summary>
     public async Task LoadAsync(string location)
     {
+        _location = location;
         _loading?.Cancel();
         var loading = _loading = new CancellationTokenSource();
 
@@ -76,13 +99,17 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
         ApplySort();
     }
 
+    public Task RefreshAsync() => LoadAsync(_location);
+
     /// <summary>
     /// Sorts by a column. Choosing the current column again reverses the order.
     /// </summary>
-    public void SortBy(SortColumn column)
+    public void SortBy(SortColumn column) => Sort(column, column == SortColumn && !SortDescending);
+
+    public void Sort(SortColumn column, bool descending)
     {
-        SortDescending = column == SortColumn && !SortDescending;
         SortColumn = column;
+        SortDescending = descending;
         ApplySort();
     }
 

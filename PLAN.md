@@ -63,9 +63,9 @@ Any other library needs approval first.
 
 1. **Scaffold** — solution, three projects, Mica window with custom title bar, `dotnet build` / `dotnet test` work. ✅
 2. **Core + tests** — `NavigationHistory`, `FolderReader`, `PathParser`, `SizeFormatter`. ✅
-3. **Navigation bar** — buttons, breadcrumb, editable path, shortcuts. ✅ (Refresh is wired up but has nothing to reload until phase 4; drive labels such as "Local Disk (C:)" in the breadcrumb come with phase 6.)
-4. **Details view** — columns, sorting, icons, open, refresh.
-5. **Icon views** — templates, thumbnails, view switching.
+3. **Navigation bar** — buttons, breadcrumb, editable path, shortcuts. ✅ (Drive labels such as "Local Disk (C:)" in the breadcrumb come with phase 6.)
+4. **Details view** — columns, sorting, icons, open, refresh. ✅ (This PC shows a plain drive list until phase 6.)
+5. **Icon views** — templates, thumbnails, view switching. ✅
 6. **Sidebar** — Quick Access via Shell COM, This PC node and page.
 7. **Search** — filter, then recursive search.
 8. **Polish** — themes, accessibility, error handling (access denied, missing drive), remember window size and view mode.
