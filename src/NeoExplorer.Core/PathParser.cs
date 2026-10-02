@@ -3,7 +3,11 @@ namespace NeoExplorer.Core;
 /// <summary>
 /// One part of a path as shown in the breadcrumb bar, e.g. "Users" for C:\Users.
 /// </summary>
-public record PathSegment(string Name, string Path);
+public record PathSegment(string Name, string Path)
+{
+    // The breadcrumb bar displays items using ToString().
+    public override string ToString() => Name;
+}
 
 public static class PathParser
 {

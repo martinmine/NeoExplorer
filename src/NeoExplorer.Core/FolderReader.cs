@@ -31,4 +31,35 @@ public static class FolderReader
 
         return items;
     }
+
+    /// <summary>
+    /// Returns the folder's full path with the casing used on disk (e.g. c:\windows becomes C:\Windows),
+    /// or null if the folder does not exist.
+    /// </summary>
+    public static string? FindFolder(string path)
+    {
+        if (!Directory.Exists(path))
+        {
+            return null;
+        }
+
+        string root = Path.GetPathRoot(path)!;
+        string result = root.Length >= 2 && root[1] == ':' ? char.ToUpperInvariant(root[0]) + root[1..] : root;
+        foreach (string part in path[root.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries))
+        {
+            string? match = null;
+            try
+            {
+                match = Directory.EnumerateDirectories(result, part).FirstOrDefault();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Can't list the parent; keep the casing as typed.
+            }
+
+            result = match ?? Path.Combine(result, part);
+        }
+
+        return result;
+    }
 }

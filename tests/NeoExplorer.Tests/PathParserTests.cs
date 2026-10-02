@@ -52,6 +52,12 @@ public class PathParserTests
             segments);
     }
 
+    [Fact]
+    public void PathSegment_ToString_IsName()
+    {
+        Assert.Equal("Users", new PathSegment("Users", @"C:\Users").ToString());
+    }
+
     [Theory]
     [InlineData(@"C:\Users\marti", @"C:\Users")]
     [InlineData(@"C:\Users", @"C:\")]

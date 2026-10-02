@@ -41,8 +41,7 @@ public partial class App : Application
     /// </summary>
     public App()
     {
-        InitializeComponent();
-    }
+        InitializeComponent();    }
 
     /// <summary>
     /// Invoked when the application is launched.

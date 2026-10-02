@@ -59,6 +59,38 @@ public sealed class FolderReaderTests : IDisposable
     }
 
     [Fact]
+    public void FindFolder_ReturnsCasingOnDisk()
+    {
+        string folder = Directory.CreateDirectory(Path.Combine(_root, "Photos", "Summer")).FullName;
+        string typed = char.ToLowerInvariant(folder[0]) + folder[1.._root.Length] + @"\photos\SUMMER";
+
+        Assert.Equal(folder, FolderReader.FindFolder(typed));
+    }
+
+    [Fact]
+    public void FindFolder_DriveRoot_UppercasesDriveLetter()
+    {
+        string root = Path.GetPathRoot(_root)!;
+
+        Assert.Equal(root.ToUpperInvariant(), FolderReader.FindFolder(root.ToLowerInvariant()));
+    }
+
+    [Fact]
+    public void FindFolder_MissingFolder_ReturnsNull()
+    {
+        Assert.Null(FolderReader.FindFolder(Path.Combine(_root, "missing")));
+    }
+
+    [Fact]
+    public void FindFolder_File_ReturnsNull()
+    {
+        string file = Path.Combine(_root, "notes.txt");
+        File.WriteAllText(file, "");
+
+        Assert.Null(FolderReader.FindFolder(file));
+    }
+
+    [Fact]
     public void Read_Cancelled_Throws()
     {
         File.WriteAllText(Path.Combine(_root, "a.txt"), "");

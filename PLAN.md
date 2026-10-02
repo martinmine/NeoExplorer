@@ -44,7 +44,7 @@ Any other library needs approval first.
 
 ## UI
 
-- **Title bar:** `ExtendsContentIntoTitleBar` with Mica; the navigation bar *is* the title bar.
+- **Title bar:** `ExtendsContentIntoTitleBar` with Mica; the navigation bar *is* the title bar. It is a plain `Grid` rather than the WinUI `TitleBar` control, because `TitleBar` centers its content instead of letting the address bar stretch. Only the strip under the caption buttons (`DragRegion`) is passed to `SetTitleBar`, so the rest of the bar stays clickable.
 - **Navigation bar:** buttons, `BreadcrumbBar` that swaps to a `TextBox` for typed paths (Enter navigates, Esc cancels), `AutoSuggestBox` for search. Shortcuts: Alt+←/→, Alt+↑, F5, Ctrl+L, Ctrl+F.
 - **Sidebar:** `TreeView` with Quick Access items, a separator, and an expandable This PC node.
 - **Main area:** This PC view (drives with usage bars, user folders) or folder view.
@@ -63,7 +63,7 @@ Any other library needs approval first.
 
 1. **Scaffold** — solution, three projects, Mica window with custom title bar, `dotnet build` / `dotnet test` work. ✅
 2. **Core + tests** — `NavigationHistory`, `FolderReader`, `PathParser`, `SizeFormatter`. ✅
-3. **Navigation bar** — buttons, breadcrumb, editable path, shortcuts.
+3. **Navigation bar** — buttons, breadcrumb, editable path, shortcuts. ✅ (Refresh is wired up but has nothing to reload until phase 4; drive labels such as "Local Disk (C:)" in the breadcrumb come with phase 6.)
 4. **Details view** — columns, sorting, icons, open, refresh.
 5. **Icon views** — templates, thumbnails, view switching.
 6. **Sidebar** — Quick Access via Shell COM, This PC node and page.
