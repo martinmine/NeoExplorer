@@ -1,9 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using NeoExplorer.Core;
-using Windows.Storage;
-using Windows.Storage.FileProperties;
+using NeoExplorer.Services;
 
 namespace NeoExplorer.ViewModels;
 
@@ -26,7 +24,7 @@ public partial class ItemViewModel(FileSystemItem item) : ObservableObject
 
     /// <summary>
     /// Loads the icon when the item scrolls into view, or when the view needs a different size.
-    /// Sizes above 16 get thumbnails, e.g. photo previews. Must be called on the UI thread.
+    /// Must be called on the UI thread.
     /// </summary>
     public async Task LoadIconAsync(uint size)
     {
@@ -36,30 +34,12 @@ public partial class ItemViewModel(FileSystemItem item) : ObservableObject
         }
 
         _iconSize = size;
-        try
-        {
-            IStorageItemProperties storageItem = Item.IsFolder
-                ? await StorageFolder.GetFolderFromPathAsync(Item.Path)
-                : await StorageFile.GetFileFromPathAsync(Item.Path);
-            var mode = size <= 16 ? ThumbnailMode.ListView : ThumbnailMode.SingleItem;
-            using StorageItemThumbnail? thumbnail = await storageItem.GetThumbnailAsync(mode, size, ThumbnailOptions.UseCurrentScale);
-            if (thumbnail is null || _iconSize != size)
-            {
-                return;
-            }
+        ImageSource? icon = await ShellIcons.LoadAsync(Item.Path, Item.IsFolder, size);
 
-            var bitmap = new BitmapImage();
-            await bitmap.SetSourceAsync(thumbnail);
-
-            // Skip if the view switched to another size while this one was loading.
-            if (_iconSize == size)
-            {
-                Icon = bitmap;
-            }
-        }
-        catch (Exception)
+        // Skip if the view switched to another size while this one was loading.
+        if (icon is not null && _iconSize == size)
         {
-            // Icons are best effort; the item still shows without one.
+            Icon = icon;
         }
     }
 

@@ -4,27 +4,41 @@ using System.Runtime.InteropServices;
 namespace NeoExplorer.Services;
 
 /// <summary>
-/// Type names as shown in File Explorer's Type column, e.g. "Text Document" or "File folder".
+/// Names as shown by File Explorer, e.g. "Text Document" or "Local Disk (C:)".
 /// </summary>
-public static class FileTypes
+public static class ShellInfo
 {
-    // Keyed by extension. Folders use a key that can never be an extension.
+    // Type names are keyed by extension. Folders use a key that can never be an extension.
     private const string FolderKey = @"\";
 
     private const uint FILE_ATTRIBUTE_DIRECTORY = 0x10;
     private const uint FILE_ATTRIBUTE_NORMAL = 0x80;
     private const uint SHGFI_USEFILEATTRIBUTES = 0x10;
+    private const uint SHGFI_DISPLAYNAME = 0x200;
     private const uint SHGFI_TYPENAME = 0x400;
 
-    private static readonly ConcurrentDictionary<string, string> Cache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, string> TypeNames = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// The Type column text for a file or folder.
+    /// </summary>
     public static string GetTypeName(FileSystemInfo info)
     {
         string key = info is DirectoryInfo ? FolderKey : info.Extension;
-        return Cache.GetOrAdd(key, Query);
+        return TypeNames.GetOrAdd(key, QueryTypeName);
     }
 
-    private static string Query(string key)
+    /// <summary>
+    /// The display name of an existing item, e.g. "Local Disk (C:)" for C:\. Falls back to the path.
+    /// </summary>
+    public static string GetDisplayName(string path)
+    {
+        var info = new SHFILEINFO();
+        SHGetFileInfo(path, 0, ref info, (uint)Marshal.SizeOf<SHFILEINFO>(), SHGFI_DISPLAYNAME);
+        return string.IsNullOrEmpty(info.szDisplayName) ? path : info.szDisplayName;
+    }
+
+    private static string QueryTypeName(string key)
     {
         // With SHGFI_USEFILEATTRIBUTES the file doesn't need to exist; only the extension matters.
         bool isFolder = key == FolderKey;

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NeoExplorer.Core;
+using NeoExplorer.Services;
 
 namespace NeoExplorer.ViewModels;
 
@@ -11,17 +12,30 @@ public partial class MainViewModel : ObservableObject
     public MainViewModel()
     {
         Folder = new FolderViewModel(Navigate);
-        _ = Folder.LoadAsync(CurrentLocation);
+        ThisPc = new ThisPcViewModel(Navigate);
+        Sidebar = new SidebarViewModel(Navigate);
+        _ = Sidebar.LoadAsync();
+        Load(CurrentLocation);
     }
 
     public FolderViewModel Folder { get; }
 
+    public ThisPcViewModel ThisPc { get; }
+
+    public SidebarViewModel Sidebar { get; }
+
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Segments), nameof(FolderName), nameof(SearchPlaceholder))]
+    [NotifyPropertyChangedFor(nameof(IsThisPC), nameof(IsFolder))]
     [NotifyCanExecuteChangedFor(nameof(GoBackCommand), nameof(GoForwardCommand), nameof(GoUpCommand))]
     public partial string CurrentLocation { get; private set; } = PathParser.ThisPC;
 
-    public IReadOnlyList<PathSegment> Segments => PathParser.GetSegments(CurrentLocation);
+    public bool IsThisPC => CurrentLocation == PathParser.ThisPC;
+
+    public bool IsFolder => !IsThisPC;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FolderName), nameof(SearchPlaceholder))]
+    public partial IReadOnlyList<PathSegment> Segments { get; private set; } = PathParser.GetSegments(PathParser.ThisPC);
 
     public string FolderName => Segments[^1].Name;
 
@@ -69,7 +83,21 @@ public partial class MainViewModel : ObservableObject
     private bool CanGoUp() => PathParser.GetParent(CurrentLocation) is not null;
 
     [RelayCommand]
-    private void Refresh() => _ = Folder.RefreshAsync();
+    private void Refresh() => Load(CurrentLocation);
 
-    partial void OnCurrentLocationChanged(string value) => _ = Folder.LoadAsync(value);
+    partial void OnCurrentLocationChanged(string value)
+    {
+        Segments = GetDisplaySegments(value);
+        Load(value);
+    }
+
+    private void Load(string location) => _ = location == PathParser.ThisPC ? ThisPc.LoadAsync() : Folder.LoadAsync(location);
+
+    /// <summary>
+    /// Shows drives the way File Explorer does, e.g. "Local Disk (C:)" instead of "C:".
+    /// </summary>
+    private static IReadOnlyList<PathSegment> GetDisplaySegments(string location) =>
+        PathParser.GetSegments(location)
+            .Select(s => s.Path.Length == 3 && s.Path.EndsWith(@":\", StringComparison.Ordinal) ? s with { Name = ShellInfo.GetDisplayName(s.Path) } : s)
+            .ToList();
 }

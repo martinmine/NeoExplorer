@@ -15,6 +15,17 @@ public sealed partial class MainPage : Page
     {
         InitializeComponent();
         FolderView.ViewModel = ViewModel.Folder;
+        ThisPcView.ViewModel = ViewModel.ThisPc;
+        SidebarView.ViewModel = ViewModel.Sidebar;
+
+        Loaded += (_, _) => SidebarView.Select(ViewModel.CurrentLocation);
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.CurrentLocation))
+            {
+                SidebarView.Select(ViewModel.CurrentLocation);
+            }
+        };
 
         // Mouse back/forward buttons, even when a child control already handled the click.
         AddHandler(PointerPressedEvent, new PointerEventHandler(OnPointerPressed), handledEventsToo: true);

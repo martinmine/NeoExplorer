@@ -143,8 +143,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Sidebar (phase 6) -->
-            <Grid AutomationProperties.Name="Sidebar" />
+            <views:SidebarView x:Name="SidebarView" AutomationProperties.Name="Sidebar" />
 
             <Grid
                 Grid.Column="1"
@@ -152,7 +151,8 @@
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1,1,0,0"
                 CornerRadius="8,0,0,0">
-                <views:FolderView x:Name="FolderView" />
+                <views:ThisPcView x:Name="ThisPcView" Visibility="{x:Bind ViewModel.IsThisPC, Mode=OneWay}" />
+                <views:FolderView x:Name="FolderView" Visibility="{x:Bind ViewModel.IsFolder, Mode=OneWay}" />
             </Grid>
         </Grid>
     </Grid>

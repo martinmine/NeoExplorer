@@ -66,7 +66,7 @@ Any other library needs approval first.
 3. **Navigation bar** — buttons, breadcrumb, editable path, shortcuts. ✅ (Drive labels such as "Local Disk (C:)" in the breadcrumb come with phase 6.)
 4. **Details view** — columns, sorting, icons, open, refresh. ✅ (This PC shows a plain drive list until phase 6.)
 5. **Icon views** — templates, thumbnails, view switching. ✅
-6. **Sidebar** — Quick Access via Shell COM, This PC node and page.
+6. **Sidebar** — Quick Access via Shell COM, This PC node and page. ✅ (Quick Access is read once at startup; drives that aren't ready, such as an empty DVD drive, are not shown.)
 7. **Search** — filter, then recursive search.
 8. **Polish** — themes, accessibility, error handling (access denied, missing drive), remember window size and view mode.
 

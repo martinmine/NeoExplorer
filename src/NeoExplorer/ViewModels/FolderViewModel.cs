@@ -16,7 +16,7 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
 
     private IReadOnlyList<ItemViewModel> _allItems = [];
     private CancellationTokenSource? _loading;
-    private string _location = PathParser.ThisPC;
+    private string _location = "";
 
     [ObservableProperty]
     public partial IReadOnlyList<ItemViewModel> Items { get; private set; } = [];
@@ -77,7 +77,7 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
         string message = "";
         try
         {
-            items = await Task.Run(() => Read(location, loading.Token), loading.Token);
+            items = await Task.Run(() => FolderReader.Read(location, ShellInfo.GetTypeName, loading.Token), loading.Token);
         }
         catch (OperationCanceledException)
         {
@@ -133,20 +133,6 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
         {
             // Windows has already told the user, or they cancelled the "Open with" dialog.
         }
-    }
-
-    private static IReadOnlyList<FileSystemItem> Read(string location, CancellationToken cancellationToken)
-    {
-        if (location != PathParser.ThisPC)
-        {
-            return FolderReader.Read(location, FileTypes.GetTypeName, cancellationToken);
-        }
-
-        // Temporary list of drives until the This PC view is built (phase 6).
-        return DriveInfo.GetDrives()
-            .Where(d => d.IsReady)
-            .Select(d => new FileSystemItem(d.Name.TrimEnd('\\'), d.Name, true, d.RootDirectory.LastWriteTime, null, FileTypes.GetTypeName(d.RootDirectory)))
-            .ToList();
     }
 
     private void ApplySort()
