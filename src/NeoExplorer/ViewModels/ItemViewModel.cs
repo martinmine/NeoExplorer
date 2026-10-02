@@ -5,11 +5,18 @@ using NeoExplorer.Services;
 
 namespace NeoExplorer.ViewModels;
 
-public partial class ItemViewModel(FileSystemItem item) : ObservableObject
+public partial class ItemViewModel(FileSystemItem item, bool isSearchResult = false) : ObservableObject
 {
     private uint _iconSize;
 
     public FileSystemItem Item { get; } = item;
+
+    /// <summary>
+    /// Search results show the folder each item is in.
+    /// </summary>
+    public bool IsSearchResult => isSearchResult;
+
+    public string Folder => System.IO.Path.GetDirectoryName(Item.Path) ?? "";
 
     public string Name => Item.Name;
 

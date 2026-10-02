@@ -62,6 +62,50 @@ public sealed class FolderReaderTests : IDisposable
     }
 
     [Fact]
+    public void Search_FindsMatchesInSubfolders()
+    {
+        Directory.CreateDirectory(Path.Combine(_root, "Reports", "2026"));
+        File.WriteAllText(Path.Combine(_root, "report.txt"), "");
+        File.WriteAllText(Path.Combine(_root, "Reports", "2026", "Report Q1.docx"), "");
+        File.WriteAllText(Path.Combine(_root, "Reports", "notes.txt"), "");
+
+        var names = FolderReader.Search(_root, "report", TypeName).Select(i => i.Name).Order(StringComparer.Ordinal).ToList();
+
+        Assert.Equal(["Report Q1.docx", "Reports", "report.txt"], names);
+    }
+
+    [Fact]
+    public void Search_SkipsHiddenFolders()
+    {
+        string hidden = Directory.CreateDirectory(Path.Combine(_root, "Hidden")).FullName;
+        File.SetAttributes(hidden, FileAttributes.Hidden | FileAttributes.Directory);
+        File.WriteAllText(Path.Combine(hidden, "match.txt"), "");
+
+        Assert.Empty(FolderReader.Search(_root, "match", TypeName));
+    }
+
+    [Fact]
+    public void Search_DoesNotFollowJunctions()
+    {
+        string folder = Directory.CreateDirectory(Path.Combine(_root, "Folder")).FullName;
+        File.WriteAllText(Path.Combine(folder, "match.txt"), "");
+        Directory.CreateSymbolicLink(Path.Combine(folder, "Loop"), _root);
+
+        var paths = FolderReader.Search(_root, "match", TypeName).Select(i => i.Path).ToList();
+
+        Assert.Equal([Path.Combine(folder, "match.txt")], paths);
+    }
+
+    [Fact]
+    public void Search_Cancelled_Throws()
+    {
+        File.WriteAllText(Path.Combine(_root, "other.txt"), "");
+
+        Assert.Throws<OperationCanceledException>(() =>
+            FolderReader.Search(_root, "match", TypeName, new CancellationToken(canceled: true)).ToList());
+    }
+
+    [Fact]
     public void FindFolder_ReturnsCasingOnDisk()
     {
         string folder = Directory.CreateDirectory(Path.Combine(_root, "Photos", "Summer")).FullName;

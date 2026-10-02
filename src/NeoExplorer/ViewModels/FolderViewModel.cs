@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -7,16 +8,21 @@ using NeoExplorer.Services;
 namespace NeoExplorer.ViewModels;
 
 /// <summary>
-/// The contents of the current folder: loading, sorting and opening items.
+/// The contents of the current folder: loading, filtering, searching, sorting and opening items.
 /// </summary>
 public partial class FolderViewModel(Action<string> navigate) : ObservableObject
 {
-    private const string UpGlyph = "\uE70E";
-    private const string DownGlyph = "\uE70D";
+    private const string UpGlyph = "";
+    private const string DownGlyph = "";
+    private const int SearchBatchMilliseconds = 200;
 
-    private IReadOnlyList<ItemViewModel> _allItems = [];
+    private IReadOnlyList<ItemViewModel> _folderItems = [];
+    private ObservableCollection<ItemViewModel> _searchResults = [];
     private CancellationTokenSource? _loading;
     private string _location = "";
+    private string _filter = "";
+    private string _query = "";
+    private string _error = "";
 
     [ObservableProperty]
     public partial IReadOnlyList<ItemViewModel> Items { get; private set; } = [];
@@ -26,6 +32,15 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
     /// </summary>
     [ObservableProperty]
     public partial string Message { get; private set; } = "";
+
+    /// <summary>
+    /// True while showing results from searching subfolders, rather than the folder itself.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool IsSearchResults { get; private set; }
+
+    [ObservableProperty]
+    public partial bool IsSearching { get; private set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(NameSortGlyph), nameof(DateModifiedSortGlyph), nameof(TypeSortGlyph), nameof(SizeSortGlyph))]
@@ -65,19 +80,75 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
     public void Zoom(int steps) => ViewMode = ViewModes.Zoom(ViewMode, steps);
 
     /// <summary>
-    /// Loads a location on a background thread. Starting a new load cancels the previous one.
+    /// Shows a new location, clearing any filter or search.
     /// </summary>
-    public async Task LoadAsync(string location)
+    public Task LoadAsync(string location)
     {
         _location = location;
-        _loading?.Cancel();
-        var loading = _loading = new CancellationTokenSource();
+        _filter = "";
+        return ReloadAsync();
+    }
 
-        IReadOnlyList<FileSystemItem> items;
-        string message = "";
+    /// <summary>
+    /// Reloads the folder, or runs the search again when showing search results.
+    /// </summary>
+    public Task RefreshAsync() => IsSearchResults ? SearchAsync(_query) : ReloadAsync();
+
+    /// <summary>
+    /// Shows only the items in the current folder whose names match <paramref name="text"/>.
+    /// Stops a running search and leaves the search results.
+    /// </summary>
+    public void Filter(string text)
+    {
+        if (IsSearchResults)
+        {
+            _loading?.Cancel();
+            IsSearchResults = false;
+            IsSearching = false;
+        }
+
+        _filter = text.Trim();
+        ApplySort();
+    }
+
+    /// <summary>
+    /// Searches the current folder and its subfolders. Results appear while the search runs.
+    /// Starting a new search, filtering or loading a location cancels it.
+    /// </summary>
+    public async Task SearchAsync(string query)
+    {
+        query = query.Trim();
+        if (query == "")
+        {
+            Filter("");
+            return;
+        }
+
+        CancellationTokenSource searching = StartLoading();
+        ObservableCollection<ItemViewModel> results = _searchResults = [];
+        _query = query;
+        _error = "";
+        IsSearchResults = true;
+        IsSearching = true;
+        Items = results;
+        UpdateMessage();
+
+        // Progress<T> runs the callback on the UI thread.
+        var progress = new Progress<List<FileSystemItem>>(batch =>
+        {
+            if (!searching.IsCancellationRequested)
+            {
+                foreach (FileSystemItem item in batch)
+                {
+                    results.Add(new ItemViewModel(item, isSearchResult: true));
+                }
+            }
+        });
+
+        string location = _location;
         try
         {
-            items = await Task.Run(() => FolderReader.Read(location, ShellInfo.GetTypeName, loading.Token), loading.Token);
+            await Task.Run(() => Search(location, query, progress, searching.Token), searching.Token);
         }
         catch (OperationCanceledException)
         {
@@ -85,21 +156,24 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
         }
         catch (Exception e) when (e is UnauthorizedAccessException or IOException)
         {
-            items = [];
-            message = e.Message;
+            _error = e.Message;
         }
 
-        if (loading.IsCancellationRequested)
+        if (searching.IsCancellationRequested)
         {
             return;
         }
 
-        _allItems = items.Select(i => new ItemViewModel(i)).ToList();
-        Message = items.Count == 0 && message == "" ? "This folder is empty." : message;
-        ApplySort();
-    }
+        IsSearching = false;
 
-    public Task RefreshAsync() => LoadAsync(_location);
+        // If the user sorted during the search, the list shown is a sorted copy without the latest results.
+        if (!ReferenceEquals(Items, results))
+        {
+            ApplySort();
+        }
+
+        UpdateMessage();
+    }
 
     /// <summary>
     /// Sorts by a column. Choosing the current column again reverses the order.
@@ -135,9 +209,84 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
         }
     }
 
+    private async Task ReloadAsync()
+    {
+        CancellationTokenSource loading = StartLoading();
+        IsSearchResults = false;
+        IsSearching = false;
+
+        string location = _location;
+        IReadOnlyList<FileSystemItem> items;
+        string error = "";
+        try
+        {
+            items = await Task.Run(() => FolderReader.Read(location, ShellInfo.GetTypeName, loading.Token), loading.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (Exception e) when (e is UnauthorizedAccessException or IOException)
+        {
+            items = [];
+            error = e.Message;
+        }
+
+        if (loading.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _folderItems = items.Select(i => new ItemViewModel(i)).ToList();
+        _error = error;
+        ApplySort();
+    }
+
+    /// <summary>
+    /// Cancels the running load or search and returns a token for the next one.
+    /// </summary>
+    private CancellationTokenSource StartLoading()
+    {
+        _loading?.Cancel();
+        return _loading = new CancellationTokenSource();
+    }
+
+    /// <summary>
+    /// Runs on a background thread and hands results to the UI in batches, so it isn't flooded.
+    /// </summary>
+    private static void Search(string location, string query, IProgress<List<FileSystemItem>> progress, CancellationToken cancellationToken)
+    {
+        var batch = new List<FileSystemItem>();
+        var sinceReport = Stopwatch.StartNew();
+        foreach (FileSystemItem item in FolderReader.Search(location, query, ShellInfo.GetTypeName, cancellationToken))
+        {
+            batch.Add(item);
+            if (sinceReport.ElapsedMilliseconds >= SearchBatchMilliseconds)
+            {
+                progress.Report(batch);
+                batch = [];
+                sinceReport.Restart();
+            }
+        }
+
+        progress.Report(batch);
+    }
+
     private void ApplySort()
     {
-        Items = _allItems.OrderBy(i => i.Item, new ItemComparer(SortColumn, SortDescending)).ToList();
+        IEnumerable<ItemViewModel> items = IsSearchResults
+            ? _searchResults
+            : _folderItems.Where(i => NameFilter.Matches(i.Name, _filter));
+        Items = items.OrderBy(i => i.Item, new ItemComparer(SortColumn, SortDescending)).ToList();
+        UpdateMessage();
+    }
+
+    private void UpdateMessage()
+    {
+        Message = _error != "" ? _error
+            : IsSearching || Items.Count > 0 ? ""
+            : IsSearchResults || _filter != "" ? "No items match your search."
+            : "This folder is empty.";
     }
 
     private string SortGlyph(SortColumn column) => column != SortColumn ? "" : SortDescending ? DownGlyph : UpGlyph;

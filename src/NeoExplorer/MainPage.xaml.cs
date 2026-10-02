@@ -24,6 +24,9 @@ public sealed partial class MainPage : Page
             if (e.PropertyName == nameof(MainViewModel.CurrentLocation))
             {
                 SidebarView.Select(ViewModel.CurrentLocation);
+
+                // A new location starts without a search, like File Explorer.
+                SearchBox.Text = "";
             }
         };
 
@@ -71,6 +74,30 @@ public sealed partial class MainPage : Page
     {
         args.Handled = true;
         StartEditingPath(ViewModel.CurrentLocation);
+    }
+
+    private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    {
+        // Ignore the box being cleared from code when navigating.
+        if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+        {
+            ViewModel.Folder.Filter(sender.Text);
+        }
+    }
+
+    private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+    {
+        _ = ViewModel.Folder.SearchAsync(args.QueryText);
+    }
+
+    private void SearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.Escape && SearchBox.Text != "")
+        {
+            e.Handled = true;
+            SearchBox.Text = "";
+            ViewModel.Folder.Filter("");
+        }
     }
 
     private void FocusSearch_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)

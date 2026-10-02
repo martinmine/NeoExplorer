@@ -126,8 +126,13 @@
                 Grid.Column="2"
                 VerticalAlignment="Center"
                 AutomationProperties.Name="Search"
+                IsEnabled="{x:Bind ViewModel.IsFolder, Mode=OneWay}"
+                KeyDown="SearchBox_KeyDown"
                 PlaceholderText="{x:Bind ViewModel.SearchPlaceholder, Mode=OneWay}"
-                QueryIcon="Find" />
+                QueryIcon="Find"
+                QuerySubmitted="SearchBox_QuerySubmitted"
+                TextChanged="SearchBox_TextChanged"
+                ToolTipService.ToolTip="Type to filter this folder. Press Enter to also search subfolders." />
 
             <!-- Drag area for moving the window; the system caption buttons are drawn on top of it. -->
             <Border

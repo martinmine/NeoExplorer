@@ -67,7 +67,7 @@ Any other library needs approval first.
 4. **Details view** — columns, sorting, icons, open, refresh. ✅ (This PC shows a plain drive list until phase 6.)
 5. **Icon views** — templates, thumbnails, view switching. ✅
 6. **Sidebar** — Quick Access via Shell COM, This PC node and page. ✅ (Quick Access is read once at startup; drives that aren't ready, such as an empty DVD drive, are not shown.)
-7. **Search** — filter, then recursive search.
+7. **Search** — filter, then recursive search. ✅ (Search is disabled on the This PC page, since searching every drive is slow without the Windows Search index.)
 8. **Polish** — themes, accessibility, error handling (access denied, missing drive), remember window size and view mode.
 
 ## Deferred work

@@ -10,6 +10,7 @@
         <GridLength x:Key="DateModifiedColumnWidth">170</GridLength>
         <GridLength x:Key="TypeColumnWidth">200</GridLength>
         <GridLength x:Key="SizeColumnWidth">110</GridLength>
+        <x:Double x:Key="FolderColumnWidth">260</x:Double>
 
         <Style x:Key="ColumnHeaderStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
             <Setter Property="Height" Value="32" />
@@ -100,6 +101,7 @@
                 <ColumnDefinition Width="{StaticResource DateModifiedColumnWidth}" />
                 <ColumnDefinition Width="{StaticResource TypeColumnWidth}" />
                 <ColumnDefinition Width="{StaticResource SizeColumnWidth}" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <Button
@@ -149,6 +151,14 @@
                     <FontIcon Glyph="{x:Bind ViewModel.SizeSortGlyph, Mode=OneWay}" Style="{StaticResource SortGlyphStyle}" />
                 </Grid>
             </Button>
+            <!-- Only search results have a Folder column. -->
+            <TextBlock
+                Grid.Column="4"
+                Width="{StaticResource FolderColumnWidth}"
+                Padding="8,0"
+                VerticalAlignment="Center"
+                Text="Folder"
+                Visibility="{x:Bind ViewModel.IsSearchResults, Mode=OneWay}" />
         </Grid>
 
         <ListView
@@ -174,6 +184,7 @@
                             <ColumnDefinition Width="{StaticResource DateModifiedColumnWidth}" />
                             <ColumnDefinition Width="{StaticResource TypeColumnWidth}" />
                             <ColumnDefinition Width="{StaticResource SizeColumnWidth}" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <Grid ColumnSpacing="8">
@@ -211,6 +222,16 @@
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             Text="{x:Bind Size}"
                             TextAlignment="Right" />
+                        <TextBlock
+                            Grid.Column="4"
+                            Width="{StaticResource FolderColumnWidth}"
+                            Padding="8,0"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind Folder}"
+                            TextTrimming="CharacterEllipsis"
+                            ToolTipService.ToolTip="{x:Bind Folder}"
+                            Visibility="{x:Bind IsSearchResult}" />
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
@@ -255,6 +276,13 @@
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
+
+        <ProgressBar
+            Grid.Row="1"
+            VerticalAlignment="Top"
+            AutomationProperties.Name="Searching"
+            IsIndeterminate="True"
+            Visibility="{x:Bind ViewModel.IsSearching, Mode=OneWay}" />
 
         <TextBlock
             x:Name="MessageText"
