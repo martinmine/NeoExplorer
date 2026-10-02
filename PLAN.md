@@ -62,7 +62,7 @@ Any other library needs approval first.
 ## Phases
 
 1. **Scaffold** — solution, three projects, Mica window with custom title bar, `dotnet build` / `dotnet test` work. ✅
-2. **Core + tests** — `NavigationHistory`, `FolderReader`, `PathParser`, `SizeFormatter`.
+2. **Core + tests** — `NavigationHistory`, `FolderReader`, `PathParser`, `SizeFormatter`. ✅
 3. **Navigation bar** — buttons, breadcrumb, editable path, shortcuts.
 4. **Details view** — columns, sorting, icons, open, refresh.
 5. **Icon views** — templates, thumbnails, view switching.
