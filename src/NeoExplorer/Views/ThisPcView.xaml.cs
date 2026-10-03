@@ -18,21 +18,28 @@ public sealed partial class ThisPcView : UserControl
     /// </summary>
     public ThisPcViewModel ViewModel { get; set; } = null!;
 
-    public void FocusContent() => DrivesGrid.Focus(FocusState.Programmatic);
+    public void FocusContent() => FoldersGrid.Focus(FocusState.Programmatic);
 
-    private void DrivesGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    private void Grid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) =>
+        Open((e.OriginalSource as FrameworkElement)?.DataContext);
+
+    private void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if ((e.OriginalSource as FrameworkElement)?.DataContext is DriveViewModel drive)
+        if (e.Key == VirtualKey.Enter && ((GridView)sender).SelectedItem is { } item)
         {
-            ViewModel.Open(drive);
+            e.Handled = true;
+            Open(item);
         }
     }
 
-    private void DrivesGrid_KeyDown(object sender, KeyRoutedEventArgs e)
+    private void Open(object? item)
     {
-        if (e.Key == VirtualKey.Enter && DrivesGrid.SelectedItem is DriveViewModel drive)
+        if (item is KnownFolderViewModel folder)
         {
-            e.Handled = true;
+            ViewModel.Open(folder);
+        }
+        else if (item is DriveViewModel drive)
+        {
             ViewModel.Open(drive);
         }
     }

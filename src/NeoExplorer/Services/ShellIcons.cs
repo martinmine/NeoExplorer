@@ -49,8 +49,9 @@ public static class ShellIcons
     }
 
     /// <summary>
-    /// Loads the icon of a shell location that isn't on disk, such as "::{20D04FE0-...}" for This PC.
-    /// The size is in physical pixels. Returns null if Windows can't provide one. Must be called on the UI thread.
+    /// Loads the icon of a shell location, such as "::{20D04FE0-...}" for This PC, or of a folder path. Unlike
+    /// <see cref="LoadAsync"/> this is always the icon, never a preview of the contents, so known folders like
+    /// Documents get their own icons. The size is in physical pixels. Returns null if Windows can't provide one. Must be called on the UI thread.
     /// </summary>
     public static ImageSource? LoadShellLocation(string parsingName, int size)
     {
