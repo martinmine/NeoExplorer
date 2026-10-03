@@ -14,6 +14,9 @@
                 <ResourceDictionary x:Key="Default">
                     <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="ControlStrokeColorDefaultBrush" />
                     <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+                    <!-- Flat border at rest and on hover too, without the lighter bottom edge. -->
+                    <StaticResource x:Key="TextControlBorderBrush" ResourceKey="ControlStrokeColorDefaultBrush" />
+                    <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="ControlStrokeColorDefaultBrush" />
                     <!-- Explorer keeps the address bar text color on hover; the highlight shows the state instead. -->
                     <StaticResource x:Key="BreadcrumbBarHoverForegroundBrush" ResourceKey="TextFillColorPrimaryBrush" />
                     <StaticResource x:Key="BreadcrumbBarPressedForegroundBrush" ResourceKey="TextFillColorSecondaryBrush" />
@@ -23,6 +26,9 @@
                 <ResourceDictionary x:Key="Light">
                     <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="ControlStrokeColorDefaultBrush" />
                     <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+                    <!-- Flat border at rest and on hover too, without the lighter bottom edge. -->
+                    <StaticResource x:Key="TextControlBorderBrush" ResourceKey="ControlStrokeColorDefaultBrush" />
+                    <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="ControlStrokeColorDefaultBrush" />
                     <!-- Explorer keeps the address bar text color on hover; the highlight shows the state instead. -->
                     <StaticResource x:Key="BreadcrumbBarHoverForegroundBrush" ResourceKey="TextFillColorPrimaryBrush" />
                     <StaticResource x:Key="BreadcrumbBarPressedForegroundBrush" ResourceKey="TextFillColorSecondaryBrush" />
@@ -214,6 +220,7 @@
                 Grid.Column="2"
                 Height="34"
                 VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
                 AutomationProperties.Name="Search"
                 IsEnabled="{x:Bind ViewModel.IsFolder, Mode=OneWay}"
                 KeyDown="SearchBox_KeyDown"
