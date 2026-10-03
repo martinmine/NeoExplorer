@@ -19,11 +19,10 @@ public static class ShellIcons
     {
         try
         {
-            IStorageItemProperties item = isFolder
-                ? await StorageFolder.GetFolderFromPathAsync(path)
-                : await StorageFile.GetFileFromPathAsync(path);
-            var mode = size <= 16 ? ThumbnailMode.ListView : ThumbnailMode.SingleItem;
-            using StorageItemThumbnail? thumbnail = await item.GetThumbnailAsync(mode, size, ThumbnailOptions.UseCurrentScale);
+            // The Storage calls go through COM, which can pump messages while it waits. Started on the UI thread,
+            // e.g. from ContainerContentChanging during layout, that re-enters XAML and crashes the app, so get
+            // the thumbnail on a background thread. Only the BitmapImage needs the UI thread.
+            using StorageItemThumbnail? thumbnail = await Task.Run(() => GetThumbnailAsync(path, isFolder, size));
             if (thumbnail is null)
             {
                 return null;
@@ -38,6 +37,15 @@ public static class ShellIcons
             // Icons are best effort; items still show without one.
             return null;
         }
+    }
+
+    private static async Task<StorageItemThumbnail?> GetThumbnailAsync(string path, bool isFolder, uint size)
+    {
+        IStorageItemProperties item = isFolder
+            ? await StorageFolder.GetFolderFromPathAsync(path)
+            : await StorageFile.GetFileFromPathAsync(path);
+        var mode = size <= 16 ? ThumbnailMode.ListView : ThumbnailMode.SingleItem;
+        return await item.GetThumbnailAsync(mode, size, ThumbnailOptions.UseCurrentScale);
     }
 
     /// <summary>
