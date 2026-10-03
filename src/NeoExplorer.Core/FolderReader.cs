@@ -7,6 +7,11 @@ namespace NeoExplorer.Core;
 /// </summary>
 public record FileSystemItem(string Name, string Path, bool IsFolder, DateTime DateModified, long? Size, string Type);
 
+/// <summary>
+/// A folder in the navigation pane tree. <see cref="HasSubfolders"/> decides whether it can be expanded.
+/// </summary>
+public record SubfolderItem(string Name, string Path, bool HasSubfolders);
+
 public static class FolderReader
 {
     private static readonly EnumerationOptions Options = new()
@@ -37,6 +42,28 @@ public static class FolderReader
         }
 
         return items;
+    }
+
+    /// <summary>
+    /// Lists the folders in a directory, sorted by name like File Explorer's navigation pane,
+    /// skipping hidden and system folders. This is blocking; call it from a background thread.
+    /// </summary>
+    public static IReadOnlyList<SubfolderItem> ReadSubfolders(string path) =>
+        new DirectoryInfo(path).EnumerateDirectories("*", Options)
+            .Select(d => new SubfolderItem(d.Name, d.FullName, HasSubfolders(d)))
+            .Order(Comparer<SubfolderItem>.Create((x, y) => ItemComparer.CompareNames(x.Name, y.Name)))
+            .ToList();
+
+    private static bool HasSubfolders(DirectoryInfo folder)
+    {
+        try
+        {
+            return folder.EnumerateDirectories("*", Options).Any();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     /// <summary>

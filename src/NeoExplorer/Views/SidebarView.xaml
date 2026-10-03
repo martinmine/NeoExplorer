@@ -7,7 +7,10 @@
 
     <UserControl.Resources>
         <DataTemplate x:Key="SidebarItemTemplate" x:DataType="vm:SidebarItem">
-            <TreeViewItem AutomationProperties.Name="{x:Bind AccessibleName}" ItemsSource="{x:Bind Children, Mode=OneWay}">
+            <TreeViewItem
+                AutomationProperties.Name="{x:Bind AccessibleName}"
+                HasUnrealizedChildren="{x:Bind HasUnrealizedChildren, Mode=OneWay}"
+                ItemsSource="{x:Bind Children}">
                 <Grid ColumnSpacing="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="16" />
@@ -60,9 +63,10 @@
                 x:Name="ThisPCTree"
                 AutomationProperties.Name="This PC"
                 CanDragItems="False"
+                Expanding="ThisPCTree_Expanding"
                 ItemInvoked="Tree_ItemInvoked"
                 ItemTemplate="{StaticResource SidebarItemTemplate}"
-                ItemsSource="{x:Bind ViewModel.ThisPCItems, Mode=OneTime}" />
+                ItemsSource="{x:Bind ViewModel.DeviceItems, Mode=OneTime}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

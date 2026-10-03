@@ -24,13 +24,7 @@ public sealed partial class SidebarView : UserControl
             _viewModel = value;
 
             // Drives load in the background, possibly after the first location was selected.
-            _viewModel.ThisPC.PropertyChanged += (_, e) =>
-            {
-                if (e.PropertyName == nameof(SidebarItem.Children))
-                {
-                    Select(_location);
-                }
-            };
+            _viewModel.ThisPC.Children.CollectionChanged += (_, _) => Select(_location);
         }
     }
 
@@ -44,6 +38,17 @@ public sealed partial class SidebarView : UserControl
         bool isQuickAccess = item is not null && ViewModel.QuickAccessItems.Contains(item);
         QuickAccessTree.SelectedItem = isQuickAccess ? item : null;
         ThisPCTree.SelectedItem = isQuickAccess ? null : item;
+    }
+
+    private async void ThisPCTree_Expanding(TreeView sender, TreeViewExpandingEventArgs args)
+    {
+        if (args.Item is SidebarItem { ShowsSubfolders: true } item)
+        {
+            await item.LoadChildrenAsync();
+
+            // The current location may be one of the folders that just appeared.
+            Select(_location);
+        }
     }
 
     private void Tree_ItemInvoked(TreeView sender, TreeViewItemInvokedEventArgs args)

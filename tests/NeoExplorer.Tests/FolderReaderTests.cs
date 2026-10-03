@@ -144,4 +144,36 @@ public sealed class FolderReaderTests : IDisposable
 
         Assert.Throws<OperationCanceledException>(() => FolderReader.Read(_root, TypeName, new CancellationToken(canceled: true)));
     }
+
+    [Fact]
+    public void ReadSubfolders_ReturnsFoldersSortedByName()
+    {
+        Directory.CreateDirectory(Path.Combine(_root, "file10"));
+        Directory.CreateDirectory(Path.Combine(_root, "file2", "Inner"));
+        File.WriteAllText(Path.Combine(_root, "notes.txt"), "");
+
+        var folders = FolderReader.ReadSubfolders(_root);
+
+        Assert.Equal(
+            [
+                new SubfolderItem("file2", Path.Combine(_root, "file2"), HasSubfolders: true),
+                new SubfolderItem("file10", Path.Combine(_root, "file10"), HasSubfolders: false),
+            ],
+            folders);
+    }
+
+    [Fact]
+    public void ReadSubfolders_SkipsHiddenFolders()
+    {
+        string hidden = Directory.CreateDirectory(Path.Combine(_root, "Hidden")).FullName;
+        File.SetAttributes(hidden, FileAttributes.Hidden | FileAttributes.Directory);
+        string outer = Directory.CreateDirectory(Path.Combine(_root, "Outer")).FullName;
+        string innerHidden = Directory.CreateDirectory(Path.Combine(outer, "Hidden")).FullName;
+        File.SetAttributes(innerHidden, FileAttributes.Hidden | FileAttributes.Directory);
+
+        var folder = Assert.Single(FolderReader.ReadSubfolders(_root));
+
+        Assert.Equal("Outer", folder.Name);
+        Assert.False(folder.HasSubfolders);
+    }
 }

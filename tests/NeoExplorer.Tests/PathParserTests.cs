@@ -39,17 +39,56 @@ public class PathParserTests
     }
 
     [Fact]
-    public void GetSegments_NetworkShare_UsesShareAsRoot()
+    public void GetSegments_NetworkShare_StartsWithNetworkAndComputer()
     {
         var segments = PathParser.GetSegments(@"\\server\share\folder");
 
         Assert.Equal(
             [
-                new PathSegment("This PC", "This PC"),
-                new PathSegment(@"\\server\share", @"\\server\share"),
+                new PathSegment("Network", "Network"),
+                new PathSegment("server", @"\\server"),
+                new PathSegment("share", @"\\server\share"),
                 new PathSegment("folder", @"\\server\share\folder"),
             ],
             segments);
+    }
+
+    [Fact]
+    public void GetSegments_NetworkComputer()
+    {
+        var segments = PathParser.GetSegments(@"\\server");
+
+        Assert.Equal([new PathSegment("Network", "Network"), new PathSegment("server", @"\\server")], segments);
+    }
+
+    [Fact]
+    public void GetSegments_Network_ReturnsOnlyNetwork()
+    {
+        Assert.Equal([new PathSegment("Network", "Network")], PathParser.GetSegments(PathParser.Network));
+    }
+
+    [Theory]
+    [InlineData(@"\\server", true)]
+    [InlineData(@"\\server\share", false)]
+    [InlineData(@"\\server\", false)]
+    [InlineData(@"\\", false)]
+    [InlineData(@"\\?", false)]
+    [InlineData(@"C:\", false)]
+    [InlineData("Network", false)]
+    public void IsNetworkComputer(string location, bool expected)
+    {
+        Assert.Equal(expected, PathParser.IsNetworkComputer(location));
+    }
+
+    [Theory]
+    [InlineData("Network", true)]
+    [InlineData(@"\\server", true)]
+    [InlineData(@"\\server\share\folder", true)]
+    [InlineData(@"C:\Users", false)]
+    [InlineData("This PC", false)]
+    public void IsNetworkLocation(string location, bool expected)
+    {
+        Assert.Equal(expected, PathParser.IsNetworkLocation(location));
     }
 
     [Fact]
@@ -62,15 +101,20 @@ public class PathParserTests
     [InlineData(@"C:\Users\marti", @"C:\Users")]
     [InlineData(@"C:\Users", @"C:\")]
     [InlineData(@"C:\", PathParser.ThisPC)]
+    [InlineData(@"\\server\share\folder", @"\\server\share")]
+    [InlineData(@"\\server\share", @"\\server")]
+    [InlineData(@"\\server", PathParser.Network)]
     public void GetParent(string location, string expected)
     {
         Assert.Equal(expected, PathParser.GetParent(location));
     }
 
-    [Fact]
-    public void GetParent_ThisPC_IsNull()
+    [Theory]
+    [InlineData(PathParser.ThisPC)]
+    [InlineData(PathParser.Network)]
+    public void GetParent_TopLevel_IsNull(string location)
     {
-        Assert.Null(PathParser.GetParent(PathParser.ThisPC));
+        Assert.Null(PathParser.GetParent(location));
     }
 
     [Theory]
@@ -80,6 +124,11 @@ public class PathParserTests
     [InlineData(@"C:/Users/marti", @"C:\Users\marti")]
     [InlineData(@"C:\", @"C:\")]
     [InlineData("this pc", PathParser.ThisPC)]
+    [InlineData("network", PathParser.Network)]
+    [InlineData(@"\\server", @"\\server")]
+    [InlineData(@"\\server\", @"\\server")]
+    [InlineData(@"\\server\share\", @"\\server\share")]
+    [InlineData(@"\\server\share\folder\", @"\\server\share\folder")]
     public void Normalize_ValidInput(string input, string expected)
     {
         Assert.Equal(expected, PathParser.Normalize(input));

@@ -9,19 +9,19 @@ namespace NeoExplorer.Views;
 
 /// <summary>
 /// Hosts an address bar segment and highlights it on hover and press, like File Explorer.
-/// The look is defined by its style's "CommonStates" visual states. The leading computer
-/// segment is shown with <see cref="ComputerTemplate"/>, every other one with <see cref="SegmentTemplate"/>.
+/// The look is defined by its style's "CommonStates" visual states. The leading computer or network
+/// segment is shown with <see cref="IconTemplate"/>, every other one with <see cref="SegmentTemplate"/>.
 /// </summary>
 public sealed partial class AddressItemPresenter : ContentControl
 {
-    public DataTemplate? ComputerTemplate { get; set; }
+    public DataTemplate? IconTemplate { get; set; }
 
     public DataTemplate? SegmentTemplate { get; set; }
 
     protected override void OnContentChanged(object oldContent, object newContent)
     {
         base.OnContentChanged(oldContent, newContent);
-        ContentTemplate = newContent is ComputerSegment ? ComputerTemplate : SegmentTemplate;
+        ContentTemplate = newContent is IconSegment ? IconTemplate : SegmentTemplate;
     }
 
     private readonly PointerEventHandler _captureLostHandler;

@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:core="using:NeoExplorer.Core"
     xmlns:views="using:NeoExplorer.Views"
+    xmlns:vm="using:NeoExplorer.ViewModels"
     KeyDown="Page_KeyDown">
 
     <Page.Resources>
@@ -182,11 +183,11 @@
                             <BreadcrumbBar.Resources>
                                 <!-- Segments carry 8px of highlight padding each side, so the chevron gaps match File Explorer. -->
                                 <Thickness x:Key="BreadcrumbBarChevronPadding">4,0</Thickness>
-                                <DataTemplate x:Key="ComputerSegmentTemplate" x:DataType="core:PathSegment">
+                                <DataTemplate x:Key="IconSegmentTemplate" x:DataType="vm:IconSegment">
                                     <FontIcon
                                         AutomationProperties.Name="{x:Bind Name}"
                                         FontSize="16"
-                                        Glyph="&#xE7F4;" />
+                                        Glyph="{x:Bind Glyph}" />
                                 </DataTemplate>
                                 <DataTemplate x:Key="PathSegmentTemplate" x:DataType="core:PathSegment">
                                     <TextBlock Text="{x:Bind Name}" />
@@ -195,7 +196,7 @@
                             <BreadcrumbBar.ItemTemplate>
                                 <DataTemplate x:DataType="core:PathSegment">
                                     <views:AddressItemPresenter
-                                        ComputerTemplate="{StaticResource ComputerSegmentTemplate}"
+                                        IconTemplate="{StaticResource IconSegmentTemplate}"
                                         Content="{x:Bind}"
                                         SegmentTemplate="{StaticResource PathSegmentTemplate}"
                                         Style="{StaticResource AddressItemPresenterStyle}" />
@@ -266,6 +267,7 @@
                 BorderThickness="1,1,0,0"
                 CornerRadius="8,0,0,0">
                 <views:ThisPcView x:Name="ThisPcView" Visibility="{x:Bind ViewModel.IsThisPC, Mode=OneWay}" />
+                <views:NetworkView x:Name="NetworkView" Visibility="{x:Bind ViewModel.IsNetwork, Mode=OneWay}" />
                 <views:FolderView x:Name="FolderView" Visibility="{x:Bind ViewModel.IsFolder, Mode=OneWay}" />
             </Grid>
         </Grid>

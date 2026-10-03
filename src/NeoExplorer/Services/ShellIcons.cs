@@ -53,13 +53,39 @@ public static class ShellIcons
     /// <see cref="LoadAsync"/> this is always the icon, never a preview of the contents, so known folders like
     /// Documents get their own icons. The size is in physical pixels. Returns null if Windows can't provide one. Must be called on the UI thread.
     /// </summary>
-    public static ImageSource? LoadShellLocation(string parsingName, int size)
+    public static ImageSource? LoadShellLocation(string parsingName, int size) => ToImage(GetIconBitmap(parsingName, size));
+
+    /// <summary>
+    /// Like <see cref="LoadShellLocation"/>, but asks the shell on a background thread, since resolving a network
+    /// computer or share can wait on the network. Must be called on the UI thread.
+    /// </summary>
+    public static async Task<ImageSource?> LoadShellLocationAsync(string parsingName, int size) =>
+        ToImage(await Task.Run(() => GetIconBitmap(parsingName, size)));
+
+    // Returns 0 if Windows can't provide an icon. The caller must delete the bitmap.
+    private static nint GetIconBitmap(string parsingName, int size)
     {
-        nint hbitmap = 0;
         try
         {
             SHCreateItemFromParsingName(parsingName, 0, typeof(IShellItemImageFactory).GUID, out IShellItemImageFactory factory);
-            factory.GetImage(new SIZE { cx = size, cy = size }, SIIGBF_ICONONLY, out hbitmap);
+            factory.GetImage(new SIZE { cx = size, cy = size }, SIIGBF_ICONONLY, out nint hbitmap);
+            return hbitmap;
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
+    }
+
+    private static ImageSource? ToImage(nint hbitmap)
+    {
+        if (hbitmap == 0)
+        {
+            return null;
+        }
+
+        try
+        {
             return ToWriteableBitmap(hbitmap);
         }
         catch (Exception)
@@ -68,10 +94,7 @@ public static class ShellIcons
         }
         finally
         {
-            if (hbitmap != 0)
-            {
-                DeleteObject(hbitmap);
-            }
+            DeleteObject(hbitmap);
         }
     }
 

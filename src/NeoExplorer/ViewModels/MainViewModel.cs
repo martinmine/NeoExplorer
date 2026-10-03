@@ -13,6 +13,7 @@ public partial class MainViewModel : ObservableObject
     {
         Folder = new FolderViewModel(Navigate);
         ThisPc = new ThisPcViewModel(Navigate);
+        Network = new NetworkViewModel(Navigate);
         Sidebar = new SidebarViewModel(Navigate);
         _ = Sidebar.LoadAsync();
         Load(CurrentLocation);
@@ -22,16 +23,24 @@ public partial class MainViewModel : ObservableObject
 
     public ThisPcViewModel ThisPc { get; }
 
+    public NetworkViewModel Network { get; }
+
     public SidebarViewModel Sidebar { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsThisPC), nameof(IsFolder))]
+    [NotifyPropertyChangedFor(nameof(IsThisPC), nameof(IsNetwork), nameof(IsFolder))]
     [NotifyCanExecuteChangedFor(nameof(GoBackCommand), nameof(GoForwardCommand), nameof(GoUpCommand))]
     public partial string CurrentLocation { get; private set; } = PathParser.ThisPC;
 
     public bool IsThisPC => CurrentLocation == PathParser.ThisPC;
 
-    public bool IsFolder => !IsThisPC;
+    /// <summary>
+    /// True for Network and for a network computer, which list computers and shared folders.
+    /// The shared folders are ordinary folders.
+    /// </summary>
+    public bool IsNetwork => CurrentLocation == PathParser.Network || PathParser.IsNetworkComputer(CurrentLocation);
+
+    public bool IsFolder => !IsThisPC && !IsNetwork;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FolderName), nameof(SearchPlaceholder))]
@@ -49,11 +58,12 @@ public partial class MainViewModel : ObservableObject
 
     /// <summary>
     /// Navigates to a path typed by the user. Returns false if it is not an existing folder.
+    /// A network computer is always accepted; its page explains if it can't be reached.
     /// </summary>
     public bool TryNavigate(string input)
     {
         string? location = PathParser.Normalize(input);
-        if (location is not null && location != PathParser.ThisPC)
+        if (location is not null && location != PathParser.ThisPC && location != PathParser.Network && !PathParser.IsNetworkComputer(location))
         {
             location = FolderReader.FindFolder(location);
         }
@@ -91,20 +101,28 @@ public partial class MainViewModel : ObservableObject
         Load(value);
     }
 
-    private void Load(string location) => _ = location == PathParser.ThisPC ? ThisPc.LoadAsync() : Folder.LoadAsync(location);
+    private void Load(string location) =>
+        _ = location == PathParser.ThisPC ? ThisPc.LoadAsync()
+            : IsNetwork ? Network.LoadAsync(location)
+            : Folder.LoadAsync(location);
 
     /// <summary>
     /// Shows drives the way File Explorer does, e.g. "Local Disk (C:)" instead of "C:",
-    /// and starts with the computer icon segment.
+    /// and starts with a computer icon segment, or a network icon segment for network locations.
     /// </summary>
     private static IReadOnlyList<PathSegment> GetDisplaySegments(string location) =>
         PathParser.GetSegments(location)
             .Select(s => s.Path.Length == 3 && s.Path.EndsWith(@":\", StringComparison.Ordinal) ? s with { Name = ShellInfo.GetDisplayName(s.Path) } : s)
-            .Prepend(new ComputerSegment())
+            .Prepend(PathParser.IsNetworkLocation(location) ? IconSegment.Network : IconSegment.ThisPC)
             .ToList();
 }
 
 /// <summary>
-/// The leading address bar segment, drawn as a computer icon like File Explorer.
+/// The leading address bar segment, drawn as an icon like File Explorer.
 /// </summary>
-public sealed record ComputerSegment() : PathSegment(PathParser.ThisPC, PathParser.ThisPC);
+public sealed record IconSegment(string Name, string Path, string Glyph) : PathSegment(Name, Path)
+{
+    public static IconSegment ThisPC { get; } = new(PathParser.ThisPC, PathParser.ThisPC, "");
+
+    public static IconSegment Network { get; } = new(PathParser.Network, PathParser.Network, "");
+}

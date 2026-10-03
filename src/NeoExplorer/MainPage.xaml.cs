@@ -17,6 +17,7 @@ public sealed partial class MainPage : Page
         InitializeComponent();
         FolderView.ViewModel = ViewModel.Folder;
         ThisPcView.ViewModel = ViewModel.ThisPc;
+        NetworkView.ViewModel = ViewModel.Network;
         SidebarView.ViewModel = ViewModel.Sidebar;
         SidebarSplitter.Column = SidebarColumn;
         if (Settings.SidebarWidth is double sidebarWidth)
@@ -32,6 +33,10 @@ public sealed partial class MainPage : Page
             if (ViewModel.IsThisPC)
             {
                 ThisPcView.FocusContent();
+            }
+            else if (ViewModel.IsNetwork)
+            {
+                NetworkView.FocusContent();
             }
             else
             {
