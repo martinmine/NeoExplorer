@@ -18,7 +18,20 @@ public sealed partial class MainPage : Page
         ThisPcView.ViewModel = ViewModel.ThisPc;
         SidebarView.ViewModel = ViewModel.Sidebar;
 
-        Loaded += (_, _) => SidebarView.Select(ViewModel.CurrentLocation);
+        Loaded += (_, _) =>
+        {
+            SidebarView.Select(ViewModel.CurrentLocation);
+
+            // Start with focus in the content, like File Explorer, rather than on the first button.
+            if (ViewModel.IsThisPC)
+            {
+                ThisPcView.FocusContent();
+            }
+            else
+            {
+                FolderView.FocusContent();
+            }
+        };
         ViewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(MainViewModel.CurrentLocation))

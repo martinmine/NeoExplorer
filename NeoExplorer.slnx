@@ -1,7 +1,18 @@
 <Solution>
+  <!-- The packaged WinUI app can't build as Any CPU, so the solution only offers real platforms. -->
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="ARM64" />
+    <Platform Name="x86" />
+  </Configurations>
   <Folder Name="/src/">
     <Project Path="src/NeoExplorer.Core/NeoExplorer.Core.csproj" />
-    <Project Path="src/NeoExplorer/NeoExplorer.csproj" />
+    <Project Path="src/NeoExplorer/NeoExplorer.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x86" Project="x86" />
+      <Deploy />
+    </Project>
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NeoExplorer.Tests/NeoExplorer.Tests.csproj" />

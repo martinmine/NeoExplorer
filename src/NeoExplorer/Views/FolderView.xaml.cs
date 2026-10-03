@@ -38,6 +38,8 @@ public sealed partial class FolderView : UserControl
         }
     }
 
+    public void FocusContent() => (ViewModel.IsDetailsView ? ItemsList : (Control)IconsGrid).Focus(FocusState.Programmatic);
+
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(FolderViewModel.ViewMode))

@@ -18,6 +18,11 @@ public partial class SidebarItem(string name, string path, bool isPinned = false
     public bool IsPinned => isPinned;
 
     /// <summary>
+    /// The name read by screen readers, which can't see the pin icon.
+    /// </summary>
+    public string AccessibleName => isPinned ? $"{name}, pinned" : name;
+
+    /// <summary>
     /// Shown instead of a shell icon for locations that aren't folders on disk.
     /// </summary>
     public string Glyph => glyph;

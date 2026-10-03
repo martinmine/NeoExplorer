@@ -16,6 +16,9 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
     private const string DownGlyph = "";
     private const int SearchBatchMilliseconds = 200;
 
+    // HRESULT for ERROR_NOT_READY, e.g. an empty DVD drive.
+    private const int ErrorNotReady = unchecked((int)0x80070015);
+
     private IReadOnlyList<ItemViewModel> _folderItems = [];
     private ObservableCollection<ItemViewModel> _searchResults = [];
     private CancellationTokenSource? _loading;
@@ -58,9 +61,12 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
 
     public string SizeSortGlyph => SortGlyph(SortColumn.Size);
 
+    /// <summary>
+    /// The view used for all folders. It is remembered between runs.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDetailsView), nameof(IsIconView), nameof(IconSize))]
-    public partial ViewMode ViewMode { get; set; }
+    public partial ViewMode ViewMode { get; set; } = Settings.ViewMode;
 
     public bool IsDetailsView => ViewMode == ViewMode.Details;
 
@@ -78,6 +84,8 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
     };
 
     public void Zoom(int steps) => ViewMode = ViewModes.Zoom(ViewMode, steps);
+
+    partial void OnViewModeChanged(ViewMode value) => Settings.ViewMode = value;
 
     /// <summary>
     /// Shows a new location, clearing any filter or search.
@@ -156,7 +164,7 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
         }
         catch (Exception e) when (e is UnauthorizedAccessException or IOException)
         {
-            _error = e.Message;
+            _error = Describe(e);
         }
 
         if (searching.IsCancellationRequested)
@@ -229,7 +237,7 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
         catch (Exception e) when (e is UnauthorizedAccessException or IOException)
         {
             items = [];
-            error = e.Message;
+            error = Describe(e);
         }
 
         if (loading.IsCancellationRequested)
@@ -280,6 +288,18 @@ public partial class FolderViewModel(Action<string> navigate) : ObservableObject
         Items = items.OrderBy(i => i.Item, new ItemComparer(SortColumn, SortDescending)).ToList();
         UpdateMessage();
     }
+
+    /// <summary>
+    /// A message for the user instead of the technical exception text, which includes paths and jargon.
+    /// </summary>
+    private static string Describe(Exception e) => e switch
+    {
+        UnauthorizedAccessException => "You don't have permission to open this folder.",
+        DirectoryNotFoundException => "This folder doesn't exist anymore. It may have been moved or deleted.",
+        DriveNotFoundException => "This drive isn't available. It may have been disconnected.",
+        IOException when e.HResult == ErrorNotReady => "This drive isn't ready. Insert a disc or connect the drive, then refresh.",
+        _ => e.Message,
+    };
 
     private void UpdateMessage()
     {

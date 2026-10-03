@@ -7,7 +7,7 @@
 
     <UserControl.Resources>
         <DataTemplate x:Key="SidebarItemTemplate" x:DataType="vm:SidebarItem">
-            <TreeViewItem AutomationProperties.Name="{x:Bind Name}" ItemsSource="{x:Bind Children, Mode=OneWay}">
+            <TreeViewItem AutomationProperties.Name="{x:Bind AccessibleName}" ItemsSource="{x:Bind Children, Mode=OneWay}">
                 <Grid ColumnSpacing="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="16" />
@@ -15,16 +15,21 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Image
+                        AutomationProperties.AccessibilityView="Raw"
                         Width="16"
                         Height="16"
                         Source="{x:Bind Icon, Mode=OneWay}" />
-                    <FontIcon FontSize="16" Glyph="{x:Bind Glyph}" />
+                    <FontIcon
+                        AutomationProperties.AccessibilityView="Raw"
+                        FontSize="16"
+                        Glyph="{x:Bind Glyph}" />
                     <TextBlock
                         Grid.Column="1"
                         VerticalAlignment="Center"
                         Text="{x:Bind Name}"
                         TextTrimming="CharacterEllipsis" />
                     <FontIcon
+                        AutomationProperties.AccessibilityView="Raw"
                         Grid.Column="2"
                         FontSize="12"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"

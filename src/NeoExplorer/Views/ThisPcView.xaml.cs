@@ -18,6 +18,8 @@ public sealed partial class ThisPcView : UserControl
     /// </summary>
     public ThisPcViewModel ViewModel { get; set; } = null!;
 
+    public void FocusContent() => DrivesGrid.Focus(FocusState.Programmatic);
+
     private void DrivesGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
         if ((e.OriginalSource as FrameworkElement)?.DataContext is DriveViewModel drive)

@@ -193,6 +193,7 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Image
+                                AutomationProperties.AccessibilityView="Raw"
                                 Width="16"
                                 Height="16"
                                 Source="{x:Bind Icon, Mode=OneWay}" />
@@ -262,6 +263,7 @@
                             <RowDefinition Height="40" />
                         </Grid.RowDefinitions>
                         <Image
+                            AutomationProperties.AccessibilityView="Raw"
                             VerticalAlignment="Bottom"
                             Source="{x:Bind Icon, Mode=OneWay}"
                             Stretch="Uniform" />

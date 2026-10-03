@@ -6,6 +6,7 @@ namespace NeoExplorer.Views;
 public sealed partial class SidebarView : UserControl
 {
     private string _location = "";
+    private SidebarViewModel _viewModel = null!;
 
     public SidebarView()
     {
@@ -15,7 +16,23 @@ public sealed partial class SidebarView : UserControl
     /// <summary>
     /// Set once by the owning page before the control loads.
     /// </summary>
-    public SidebarViewModel ViewModel { get; set; } = null!;
+    public SidebarViewModel ViewModel
+    {
+        get => _viewModel;
+        set
+        {
+            _viewModel = value;
+
+            // Drives load in the background, possibly after the first location was selected.
+            _viewModel.ThisPC.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(SidebarItem.Children))
+                {
+                    Select(_location);
+                }
+            };
+        }
+    }
 
     /// <summary>
     /// Highlights the item for the current location, or nothing if it isn't in the sidebar.

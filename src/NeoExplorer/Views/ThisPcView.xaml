@@ -34,6 +34,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Image
+                            AutomationProperties.AccessibilityView="Raw"
                             Width="48"
                             Height="48"
                             Source="{x:Bind Icon, Mode=OneWay}" />
