@@ -21,6 +21,9 @@
             <Setter Property="BorderBrush" Value="Transparent" />
         </Style>
 
+        <!-- The selection rectangle, in the accent color like File Explorer's. -->
+        <SolidColorBrush x:Key="MarqueeFillBrush" Opacity="0.25" Color="{ThemeResource SystemAccentColor}" />
+
         <Style x:Key="SortGlyphStyle" TargetType="FontIcon">
             <Setter Property="FontSize" Value="10" />
             <Setter Property="HorizontalAlignment" Value="Right" />
@@ -91,8 +94,25 @@
                         <FontIcon Glyph="&#xE72C;" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
+                <MenuFlyoutSeparator x:Name="PasteSeparator" />
+                <MenuFlyoutItem
+                    x:Name="PasteMenuItem"
+                    Click="Paste_Click"
+                    KeyboardAcceleratorTextOverride="Ctrl+V"
+                    Text="Paste">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE77F;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
             </MenuFlyout>
         </Grid.ContextFlyout>
+
+        <!-- Shown for a few seconds when a character that can't be in a file name is typed while renaming.
+             Not light-dismiss, since that would take the focus from the name being edited. -->
+        <TeachingTip
+            x:Name="InvalidNameTip"
+            Grid.Row="1"
+            PreferredPlacement="Bottom" />
 
         <!-- Details view column headers. Padding lines them up with the ListViewItem content below. -->
         <Grid Padding="12,4,16,0" Visibility="{x:Bind ViewModel.IsDetailsView, Mode=OneWay}">
@@ -166,9 +186,18 @@
             Grid.Row="1"
             AutomationProperties.Name="Items"
             ContainerContentChanging="Items_ContainerContentChanging"
+            AllowDrop="True"
+            CanDragItems="True"
+            ContextRequested="Items_ContextRequested"
+            DragItemsCompleted="Items_DragItemsCompleted"
+            DragItemsStarting="Items_DragItemsStarting"
+            DragLeave="Items_DragLeave"
+            DragOver="Items_DragOver"
+            Drop="Items_Drop"
             DoubleTapped="Items_DoubleTapped"
             ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}"
             KeyDown="Items_KeyDown"
+            SelectionChanged="Items_SelectionChanged"
             SelectionMode="Extended"
             Visibility="{x:Bind ViewModel.IsDetailsView, Mode=OneWay}">
             <ListView.ItemContainerStyle>
@@ -198,12 +227,26 @@
                                 AutomationProperties.AccessibilityView="Raw"
                                 Width="16"
                                 Height="16"
+                                Opacity="{x:Bind IconOpacity, Mode=OneWay}"
                                 Source="{x:Bind Icon, Mode=OneWay}" />
                             <TextBlock
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Text="{x:Bind Name}"
-                                TextTrimming="CharacterEllipsis" />
+                                TextTrimming="CharacterEllipsis"
+                                Visibility="{x:Bind IsNotRenaming, Mode=OneWay}" />
+                            <TextBox
+                                Grid.Column="1"
+                                Margin="-4,0,0,0"
+                                MinHeight="0"
+                                Padding="4,2"
+                                VerticalAlignment="Center"
+                                AutomationProperties.AutomationId="RenameBox"
+                                AutomationProperties.Name="Name"
+                                BeforeTextChanging="RenameBox_BeforeTextChanging"
+                                KeyDown="RenameBox_KeyDown"
+                                LostFocus="RenameBox_LostFocus"
+                                Visibility="{x:Bind IsRenaming, Mode=OneWay}" />
                         </Grid>
                         <TextBlock
                             Grid.Column="1"
@@ -247,9 +290,18 @@
             Padding="12,8"
             AutomationProperties.Name="Items"
             ContainerContentChanging="Items_ContainerContentChanging"
+            AllowDrop="True"
+            CanDragItems="True"
+            ContextRequested="Items_ContextRequested"
+            DragItemsCompleted="Items_DragItemsCompleted"
+            DragItemsStarting="Items_DragItemsStarting"
+            DragLeave="Items_DragLeave"
+            DragOver="Items_DragOver"
+            Drop="Items_Drop"
             DoubleTapped="Items_DoubleTapped"
             ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}"
             KeyDown="Items_KeyDown"
+            SelectionChanged="Items_SelectionChanged"
             SelectionMode="Extended"
             Visibility="{x:Bind ViewModel.IsIconView, Mode=OneWay}">
             <GridView.ItemsPanel>
@@ -267,6 +319,7 @@
                         <Image
                             AutomationProperties.AccessibilityView="Raw"
                             VerticalAlignment="Bottom"
+                            Opacity="{x:Bind IconOpacity, Mode=OneWay}"
                             Source="{x:Bind Icon, Mode=OneWay}"
                             Stretch="Uniform" />
                         <TextBlock
@@ -275,11 +328,40 @@
                             Text="{x:Bind Name}"
                             TextAlignment="Center"
                             TextTrimming="CharacterEllipsis"
-                            TextWrapping="Wrap" />
+                            TextWrapping="Wrap"
+                            Visibility="{x:Bind IsNotRenaming, Mode=OneWay}" />
+                        <!-- Drawn over the tile below, so long names have room while editing, as in File Explorer. -->
+                        <TextBox
+                            Grid.Row="1"
+                            MinHeight="0"
+                            Padding="4,2"
+                            VerticalAlignment="Top"
+                            AutomationProperties.AutomationId="RenameBox"
+                            AutomationProperties.Name="Name"
+                            BeforeTextChanging="RenameBox_BeforeTextChanging"
+                            Canvas.ZIndex="1"
+                            KeyDown="RenameBox_KeyDown"
+                            LostFocus="RenameBox_LostFocus"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap"
+                            Visibility="{x:Bind IsRenaming, Mode=OneWay}" />
                     </Grid>
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
+
+        <!-- Overlay for the selection rectangle drawn when dragging over empty space. -->
+        <Canvas
+            x:Name="MarqueeCanvas"
+            Grid.Row="1"
+            IsHitTestVisible="False">
+            <Rectangle
+                x:Name="MarqueeRectangle"
+                Fill="{StaticResource MarqueeFillBrush}"
+                Stroke="{ThemeResource AccentFillColorDefaultBrush}"
+                StrokeThickness="1"
+                Visibility="Collapsed" />
+        </Canvas>
 
         <ProgressBar
             Grid.Row="1"

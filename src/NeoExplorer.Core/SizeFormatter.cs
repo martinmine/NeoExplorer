@@ -37,4 +37,28 @@ public static class SizeFormatter
         string format = value < 10 ? "{0:0.##} {1}" : value < 100 ? "{0:0.#} {1}" : "{0:0} {1}";
         return string.Format(provider, format, value, Units[unit]);
     }
+
+    /// <summary>
+    /// Formats a size like the Properties window: compact, then the exact number of bytes ("1.23 MB (1,294,336 bytes)").
+    /// Zero is just "0 bytes".
+    /// </summary>
+    public static string FormatWithBytes(long bytes, IFormatProvider? provider = null)
+    {
+        provider ??= CultureInfo.CurrentCulture;
+        return bytes == 0 ? FormatCompact(0, provider) : string.Format(provider, "{0} ({1:N0} bytes)", FormatCompact(bytes, provider), bytes);
+    }
+
+    /// <summary>
+    /// The space a file takes on disk: whole clusters, so a 1-byte file takes a full 4 KB cluster.
+    /// </summary>
+    public static long RoundUpToCluster(long bytes, long clusterSize) =>
+        clusterSize <= 0 ? bytes : (bytes + clusterSize - 1) / clusterSize * clusterSize;
+
+    /// <summary>
+    /// The size on disk File Explorer shows for a file the file system reports <paramref name="allocationSize"/> for.
+    /// NTFS keeps very small files inside its file table and reports a few bytes that aren't whole clusters;
+    /// those take no space of their own, so Explorer shows 0 bytes.
+    /// </summary>
+    public static long SizeOnDisk(long allocationSize, long clusterSize) =>
+        clusterSize > 0 && allocationSize % clusterSize != 0 ? 0 : allocationSize;
 }

@@ -33,6 +33,36 @@ public class SizeFormatterTests
         Assert.Equal(expected, SizeFormatter.FormatCompact(bytes, CultureInfo.InvariantCulture));
     }
 
+    [Theory]
+    [InlineData(0, "0 bytes")]
+    [InlineData(12, "12 bytes (12 bytes)")]
+    [InlineData(1_294_336, "1.23 MB (1,294,336 bytes)")]
+    public void FormatWithBytes_AddsTheExactSize(long bytes, string expected)
+    {
+        Assert.Equal(expected, SizeFormatter.FormatWithBytes(bytes, CultureInfo.InvariantCulture));
+    }
+
+    [Theory]
+    [InlineData(0, 4096, 0)]
+    [InlineData(1, 4096, 4096)]
+    [InlineData(4096, 4096, 4096)]
+    [InlineData(4097, 4096, 8192)]
+    [InlineData(4097, 0, 4097)]
+    public void RoundUpToCluster(long bytes, long clusterSize, long expected)
+    {
+        Assert.Equal(expected, SizeFormatter.RoundUpToCluster(bytes, clusterSize));
+    }
+
+    [Theory]
+    [InlineData(16, 4096, 0)]
+    [InlineData(0, 4096, 0)]
+    [InlineData(8192, 4096, 8192)]
+    [InlineData(16, 0, 16)]
+    public void SizeOnDisk_FilesInTheFileTableTakeNoSpace(long allocationSize, long clusterSize, long expected)
+    {
+        Assert.Equal(expected, SizeFormatter.SizeOnDisk(allocationSize, clusterSize));
+    }
+
     [Fact]
     public void Format_UsesCultureGroupSeparator()
     {

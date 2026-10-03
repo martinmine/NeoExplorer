@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using NeoExplorer.Core;
 using NeoExplorer.ViewModels;
 using Windows.System;
@@ -23,6 +24,12 @@ public sealed partial class FolderView : UserControl
 
         // Ctrl+mouse wheel changes the view, even though the list also handles the wheel for scrolling.
         AddHandler(PointerWheelChangedEvent, new PointerEventHandler(OnPointerWheelChanged), handledEventsToo: true);
+
+        _ = new MarqueeSelection(ItemsList, Root, MarqueeCanvas, MarqueeRectangle);
+        _ = new MarqueeSelection(IconsGrid, Root, MarqueeCanvas, MarqueeRectangle);
+        InvalidNameTip.Subtitle = FileNameValidator.InvalidCharactersMessage;
+        // Alt+Enter is taken before the list sees it, which it doesn't pass on with Alt held.
+        PreviewKeyDown += OnPreviewKeyDown;
     }
 
     /// <summary>
@@ -35,10 +42,16 @@ public sealed partial class FolderView : UserControl
         {
             _viewModel = value;
             _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+            _viewModel.SelectionRestoring += ViewModel_SelectionRestoring;
         }
     }
 
-    public void FocusContent() => (ViewModel.IsDetailsView ? ItemsList : (Control)IconsGrid).Focus(FocusState.Programmatic);
+    /// <summary>
+    /// The list or grid for the current view. Both show the same items; only one is visible.
+    /// </summary>
+    private ListViewBase ActiveList => ViewModel.IsDetailsView ? ItemsList : IconsGrid;
+
+    public void FocusContent() => ActiveList.Focus(FocusState.Programmatic);
 
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -46,6 +59,73 @@ public sealed partial class FolderView : UserControl
         {
             ApplyIconLayout();
             ReloadVisibleIcons();
+
+            // Carry the selection over to the other view.
+            Select(ViewModel.SelectedItems.ToList(), reveal: true);
+        }
+        else if (e.PropertyName == nameof(FolderViewModel.Items) && IsFocusWithin(ActiveList))
+        {
+            // Replacing the items removes the focused item, and Windows would move the focus to the first
+            // control in the window. Keep it in the list instead, after the selection has been restored.
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, FocusSelection);
+        }
+    }
+
+    private bool IsFocusWithin(UIElement element)
+    {
+        for (var focused = FocusManager.GetFocusedElement(XamlRoot) as DependencyObject; focused is not null; focused = VisualTreeHelper.GetParent(focused))
+        {
+            if (focused == element)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Focuses the first selected item, or the list itself when nothing is selected.
+    /// </summary>
+    private void FocusSelection()
+    {
+        ListViewBase list = ActiveList;
+        if (list.SelectedItems.Count > 0 && list.ContainerFromItem(list.SelectedItems[0]) is Control container)
+        {
+            container.Focus(FocusState.Programmatic);
+        }
+        else
+        {
+            list.Focus(FocusState.Programmatic);
+        }
+    }
+
+    private void ViewModel_SelectionRestoring(object? sender, SelectionRequest request)
+    {
+        // Runs after the list has picked up the new items.
+        DispatcherQueue.TryEnqueue(() => Select(request.Items, request.Reveal));
+    }
+
+    private void Select(IReadOnlyList<ItemViewModel> items, bool reveal)
+    {
+        ListViewBase list = ActiveList;
+        list.SelectedItems.Clear();
+        foreach (ItemViewModel item in items)
+        {
+            list.SelectedItems.Add(item);
+        }
+
+        if (reveal && items.Count > 0)
+        {
+            list.ScrollIntoView(items[0]);
+        }
+    }
+
+    private void Items_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ReferenceEquals(sender, ActiveList))
+        {
+            ViewModel.SelectedItems = ActiveList.SelectedItems.Cast<ItemViewModel>().ToList();
         }
     }
 
@@ -98,18 +178,9 @@ public sealed partial class FolderView : UserControl
 
     private void Items_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
-        // Ignore double-clicks on empty space between the items.
-        if ((e.OriginalSource as FrameworkElement)?.DataContext is ItemViewModel item)
+        // Ignore double-clicks on empty space between the items, and in a name being edited.
+        if ((e.OriginalSource as FrameworkElement)?.DataContext is ItemViewModel { IsRenaming: false } item)
         {
-            ViewModel.Open(item);
-        }
-    }
-
-    private void Items_KeyDown(object sender, KeyRoutedEventArgs e)
-    {
-        if (e.Key == VirtualKey.Enter && ((ListViewBase)sender).SelectedItem is ItemViewModel item)
-        {
-            e.Handled = true;
             ViewModel.Open(item);
         }
     }
@@ -146,20 +217,6 @@ public sealed partial class FolderView : UserControl
         {
             _wheelDelta -= steps * WheelNotch;
             ViewModel.Zoom(steps);
-        }
-    }
-
-    private void ContextMenu_Opening(object sender, object e)
-    {
-        foreach (RadioMenuFlyoutItem item in ViewMenu.Items.OfType<RadioMenuFlyoutItem>())
-        {
-            item.IsChecked = (string)item.Tag == ViewModel.ViewMode.ToString();
-        }
-
-        string direction = ViewModel.SortDescending ? "Descending" : "Ascending";
-        foreach (RadioMenuFlyoutItem item in SortMenu.Items.OfType<RadioMenuFlyoutItem>())
-        {
-            item.IsChecked = (string)item.Tag == ViewModel.SortColumn.ToString() || (string)item.Tag == direction;
         }
     }
 

@@ -30,6 +30,24 @@ public partial class ItemViewModel(FileSystemItem item, bool isSearchResult = fa
     public partial ImageSource? Icon { get; private set; }
 
     /// <summary>
+    /// True while the name is being edited in place.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNotRenaming))]
+    public partial bool IsRenaming { get; set; }
+
+    public bool IsNotRenaming => !IsRenaming;
+
+    /// <summary>
+    /// True after Cut until the item is pasted. Cut items are shown faded, as in File Explorer.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IconOpacity))]
+    public partial bool IsCut { get; set; } = ShellClipboard.IsCut(item.Path);
+
+    public double IconOpacity => IsCut ? 0.5 : 1;
+
+    /// <summary>
     /// Loads the icon when the item scrolls into view, or when the view needs a different size.
     /// Must be called on the UI thread.
     /// </summary>
