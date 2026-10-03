@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using NeoExplorer.Core;
+using NeoExplorer.Services;
 using NeoExplorer.ViewModels;
 using Windows.System;
 
@@ -17,6 +18,11 @@ public sealed partial class MainPage : Page
         FolderView.ViewModel = ViewModel.Folder;
         ThisPcView.ViewModel = ViewModel.ThisPc;
         SidebarView.ViewModel = ViewModel.Sidebar;
+        SidebarSplitter.Column = SidebarColumn;
+        if (Settings.SidebarWidth is double sidebarWidth)
+        {
+            SidebarColumn.Width = new GridLength(Math.Clamp(sidebarWidth, SidebarColumn.MinWidth, SidebarColumn.MaxWidth));
+        }
 
         Loaded += (_, _) =>
         {
@@ -68,6 +74,11 @@ public sealed partial class MainPage : Page
             e.Handled = true;
             ViewModel.GoBackCommand.Execute(null);
         }
+    }
+
+    private void SidebarSplitter_Resized(object? sender, double width)
+    {
+        Settings.SidebarWidth = width;
     }
 
     private void Breadcrumb_ItemClicked(BreadcrumbBar sender, BreadcrumbBarItemClickedEventArgs args)

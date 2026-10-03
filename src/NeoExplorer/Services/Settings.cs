@@ -30,6 +30,15 @@ public static class Settings
         }
     }
 
+    /// <summary>
+    /// The sidebar width set by dragging its edge, in DPI-independent pixels.
+    /// </summary>
+    public static double? SidebarWidth
+    {
+        get => Get(nameof(SidebarWidth)) as double?;
+        set => Values[nameof(SidebarWidth)] = value;
+    }
+
     public static bool IsMaximized
     {
         get => Get(nameof(IsMaximized)) is true;

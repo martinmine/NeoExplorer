@@ -3,17 +3,77 @@
     x:Class="NeoExplorer.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:core="using:NeoExplorer.Core"
     xmlns:views="using:NeoExplorer.Views"
     KeyDown="Page_KeyDown">
 
     <Page.Resources>
-        <Style x:Key="NavigationButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
-            <Setter Property="Width" Value="40" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-        </Style>
+        <ResourceDictionary>
+            <!-- No accent line under the address and search boxes while typing, like File Explorer. -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="ControlStrokeColorDefaultBrush" />
+                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+                    <!-- Explorer keeps the address bar text color on hover; the highlight shows the state instead. -->
+                    <StaticResource x:Key="BreadcrumbBarHoverForegroundBrush" ResourceKey="TextFillColorPrimaryBrush" />
+                    <StaticResource x:Key="BreadcrumbBarPressedForegroundBrush" ResourceKey="TextFillColorSecondaryBrush" />
+                    <StaticResource x:Key="BreadcrumbBarCurrentHoverForegroundBrush" ResourceKey="TextFillColorPrimaryBrush" />
+                    <StaticResource x:Key="BreadcrumbBarCurrentPressedForegroundBrush" ResourceKey="TextFillColorPrimaryBrush" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="ControlStrokeColorDefaultBrush" />
+                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+                    <!-- Explorer keeps the address bar text color on hover; the highlight shows the state instead. -->
+                    <StaticResource x:Key="BreadcrumbBarHoverForegroundBrush" ResourceKey="TextFillColorPrimaryBrush" />
+                    <StaticResource x:Key="BreadcrumbBarPressedForegroundBrush" ResourceKey="TextFillColorSecondaryBrush" />
+                    <StaticResource x:Key="BreadcrumbBarCurrentHoverForegroundBrush" ResourceKey="TextFillColorPrimaryBrush" />
+                    <StaticResource x:Key="BreadcrumbBarCurrentPressedForegroundBrush" ResourceKey="TextFillColorPrimaryBrush" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <Style x:Key="NavigationButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                <Setter Property="Width" Value="40" />
+                <Setter Property="Height" Value="32" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+            </Style>
+
+            <!-- Rounded highlight behind an address bar segment while hovered or pressed. -->
+            <Style x:Key="AddressItemPresenterStyle" TargetType="views:AddressItemPresenter">
+                <Setter Property="Padding" Value="8,2" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="IsTabStop" Value="False" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="views:AddressItemPresenter">
+                            <Border
+                                x:Name="Highlight"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{ThemeResource SubtleFillColorTransparentBrush}"
+                                CornerRadius="{ThemeResource ControlCornerRadius}">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Target="Highlight.Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <VisualState.Setters>
+                                                <Setter Target="Highlight.Background" Value="{ThemeResource SubtleFillColorTertiaryBrush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
     </Page.Resources>
 
     <Page.KeyboardAccelerators>
@@ -31,9 +91,9 @@
 
         <!-- Navigation bar, drawn in the window's title bar area. -->
         <Grid
-            Height="48"
-            Padding="8,0,0,0"
-            ColumnSpacing="8">
+            Height="52"
+            Padding="12,0,0,0"
+            ColumnSpacing="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -41,7 +101,12 @@
                 <ColumnDefinition Width="188" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Orientation="Horizontal" Spacing="4">
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <!-- Disabled buttons only dim their icon, like File Explorer. -->
+                <StackPanel.Resources>
+                    <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="Transparent" />
+                    <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="Transparent" />
+                </StackPanel.Resources>
                 <Button
                     x:Name="BackButton"
                     AutomationProperties.Name="Back"
@@ -51,7 +116,7 @@
                     <Button.KeyboardAccelerators>
                         <KeyboardAccelerator Key="Left" Modifiers="Menu" />
                     </Button.KeyboardAccelerators>
-                    <FontIcon FontSize="16" Glyph="&#xE72B;" />
+                    <FontIcon FontSize="13" Glyph="&#xE72B;" />
                 </Button>
                 <Button
                     x:Name="ForwardButton"
@@ -62,7 +127,7 @@
                     <Button.KeyboardAccelerators>
                         <KeyboardAccelerator Key="Right" Modifiers="Menu" />
                     </Button.KeyboardAccelerators>
-                    <FontIcon FontSize="16" Glyph="&#xE72A;" />
+                    <FontIcon FontSize="13" Glyph="&#xE72A;" />
                 </Button>
                 <Button
                     x:Name="UpButton"
@@ -73,7 +138,7 @@
                     <Button.KeyboardAccelerators>
                         <KeyboardAccelerator Key="Up" Modifiers="Menu" />
                     </Button.KeyboardAccelerators>
-                    <FontIcon FontSize="16" Glyph="&#xE74A;" />
+                    <FontIcon FontSize="13" Glyph="&#xE74A;" />
                 </Button>
                 <Button
                     x:Name="RefreshButton"
@@ -84,13 +149,13 @@
                     <Button.KeyboardAccelerators>
                         <KeyboardAccelerator Key="F5" />
                     </Button.KeyboardAccelerators>
-                    <FontIcon FontSize="16" Glyph="&#xE72C;" />
+                    <FontIcon FontSize="13" Glyph="&#xE72C;" />
                 </Button>
             </StackPanel>
 
             <Border
                 Grid.Column="1"
-                Height="32"
+                Height="34"
                 Background="{ThemeResource ControlFillColorDefaultBrush}"
                 BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
                 BorderThickness="1"
@@ -99,7 +164,7 @@
                     <!-- Clicking the empty space next to the breadcrumb switches to typing a path. -->
                     <Grid
                         x:Name="PathArea"
-                        Padding="4,0"
+                        Padding="0,0,4,0"
                         Background="Transparent"
                         Tapped="PathArea_Tapped">
                         <BreadcrumbBar
@@ -107,7 +172,30 @@
                             VerticalAlignment="Center"
                             AutomationProperties.Name="Address"
                             ItemClicked="Breadcrumb_ItemClicked"
-                            ItemsSource="{x:Bind ViewModel.Segments, Mode=OneWay}" />
+                            ItemsSource="{x:Bind ViewModel.Segments, Mode=OneWay}">
+                            <BreadcrumbBar.Resources>
+                                <!-- Segments carry 8px of highlight padding each side, so the chevron gaps match File Explorer. -->
+                                <Thickness x:Key="BreadcrumbBarChevronPadding">4,0</Thickness>
+                                <DataTemplate x:Key="ComputerSegmentTemplate" x:DataType="core:PathSegment">
+                                    <FontIcon
+                                        AutomationProperties.Name="{x:Bind Name}"
+                                        FontSize="16"
+                                        Glyph="&#xE7F4;" />
+                                </DataTemplate>
+                                <DataTemplate x:Key="PathSegmentTemplate" x:DataType="core:PathSegment">
+                                    <TextBlock Text="{x:Bind Name}" />
+                                </DataTemplate>
+                            </BreadcrumbBar.Resources>
+                            <BreadcrumbBar.ItemTemplate>
+                                <DataTemplate x:DataType="core:PathSegment">
+                                    <views:AddressItemPresenter
+                                        ComputerTemplate="{StaticResource ComputerSegmentTemplate}"
+                                        Content="{x:Bind}"
+                                        SegmentTemplate="{StaticResource PathSegmentTemplate}"
+                                        Style="{StaticResource AddressItemPresenterStyle}" />
+                                </DataTemplate>
+                            </BreadcrumbBar.ItemTemplate>
+                        </BreadcrumbBar>
                     </Grid>
 
                     <TextBox
@@ -124,6 +212,7 @@
             <AutoSuggestBox
                 x:Name="SearchBox"
                 Grid.Column="2"
+                Height="34"
                 VerticalAlignment="Center"
                 AutomationProperties.Name="Search"
                 IsEnabled="{x:Bind ViewModel.IsFolder, Mode=OneWay}"
@@ -144,11 +233,24 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="240" />
+                <ColumnDefinition
+                    x:Name="SidebarColumn"
+                    Width="240"
+                    MinWidth="140"
+                    MaxWidth="600" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <views:SidebarView x:Name="SidebarView" AutomationProperties.Name="Sidebar" />
+
+            <!-- Drag the sidebar edge to resize it. -->
+            <views:SidebarSplitter
+                x:Name="SidebarSplitter"
+                Width="8"
+                Margin="0,0,-4,0"
+                HorizontalAlignment="Right"
+                Canvas.ZIndex="1"
+                Resized="SidebarSplitter_Resized" />
 
             <Grid
                 Grid.Column="1"

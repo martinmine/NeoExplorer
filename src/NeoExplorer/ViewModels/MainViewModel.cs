@@ -35,7 +35,7 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FolderName), nameof(SearchPlaceholder))]
-    public partial IReadOnlyList<PathSegment> Segments { get; private set; } = PathParser.GetSegments(PathParser.ThisPC);
+    public partial IReadOnlyList<PathSegment> Segments { get; private set; } = GetDisplaySegments(PathParser.ThisPC);
 
     public string FolderName => Segments[^1].Name;
 
@@ -94,10 +94,17 @@ public partial class MainViewModel : ObservableObject
     private void Load(string location) => _ = location == PathParser.ThisPC ? ThisPc.LoadAsync() : Folder.LoadAsync(location);
 
     /// <summary>
-    /// Shows drives the way File Explorer does, e.g. "Local Disk (C:)" instead of "C:".
+    /// Shows drives the way File Explorer does, e.g. "Local Disk (C:)" instead of "C:",
+    /// and starts with the computer icon segment.
     /// </summary>
     private static IReadOnlyList<PathSegment> GetDisplaySegments(string location) =>
         PathParser.GetSegments(location)
             .Select(s => s.Path.Length == 3 && s.Path.EndsWith(@":\", StringComparison.Ordinal) ? s with { Name = ShellInfo.GetDisplayName(s.Path) } : s)
+            .Prepend(new ComputerSegment())
             .ToList();
 }
+
+/// <summary>
+/// The leading address bar segment, drawn as a computer icon like File Explorer.
+/// </summary>
+public sealed record ComputerSegment() : PathSegment(PathParser.ThisPC, PathParser.ThisPC);

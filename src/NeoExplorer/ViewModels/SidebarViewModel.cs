@@ -8,6 +8,8 @@ namespace NeoExplorer.ViewModels;
 
 public partial class SidebarItem(string name, string path, bool isPinned = false, string glyph = "") : ObservableObject
 {
+    private const string ThisPCParsingName = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}";
+
     public string Name => name;
 
     /// <summary>
@@ -37,7 +39,12 @@ public partial class SidebarItem(string name, string path, bool isPinned = false
 
     public async Task LoadIconAsync()
     {
-        if (glyph == "")
+        if (path == PathParser.ThisPC)
+        {
+            // 32 px stays sharp at up to 200% display scaling.
+            Icon = ShellIcons.LoadShellLocation(ThisPCParsingName, 32);
+        }
+        else if (glyph == "")
         {
             Icon = await ShellIcons.LoadAsync(path, isFolder: true, 16);
         }
@@ -55,12 +62,11 @@ public partial class SidebarViewModel(Action<string> navigate) : ObservableObjec
     private const string RecycleBinPath = "::{645FF040-5081-101B-9F08-00AA002F954E}";
     private const string RecycleBinGlyph = "";
     private const string ShellFolderGlyph = "";
-    private const string ThisPCGlyph = "";
 
     [ObservableProperty]
     public partial IReadOnlyList<SidebarItem> QuickAccessItems { get; private set; } = [];
 
-    public SidebarItem ThisPC { get; } = new(PathParser.ThisPC, PathParser.ThisPC, glyph: ThisPCGlyph);
+    public SidebarItem ThisPC { get; } = new(PathParser.ThisPC, PathParser.ThisPC);
 
     /// <summary>
     /// This PC as a one-item list, for the tree that shows it.
@@ -76,7 +82,7 @@ public partial class SidebarViewModel(Action<string> navigate) : ObservableObjec
         IReadOnlyList<DriveItem> drives = await Task.Run(Drives.GetDrives);
         ThisPC.Children = drives.Select(d => new SidebarItem(d.Name, d.Path)).ToList();
 
-        foreach (SidebarItem item in QuickAccessItems.Concat(ThisPC.Children))
+        foreach (SidebarItem item in QuickAccessItems.Concat(ThisPCItems).Concat(ThisPC.Children))
         {
             _ = item.LoadIconAsync();
         }
