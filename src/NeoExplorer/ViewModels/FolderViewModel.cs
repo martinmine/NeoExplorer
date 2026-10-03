@@ -275,7 +275,7 @@ public partial class FolderViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Whether items can be pasted or dropped into the view itself. Search results come from many folders.
+    /// Whether items can be pasted, dropped or created in the view itself. Search results come from many folders.
     /// </summary>
     public bool CanPasteHere => !IsSearchResults && _error == "";
 
@@ -348,6 +348,25 @@ public partial class FolderViewModel : ObservableObject
     {
         string? newPath = await FileOperations.RenameAsync(item.Item.Path, newName, App.WindowHandle);
         await ShowResultAsync(Path.GetDirectoryName(item.Item.Path), newPath is null ? [] : [newPath]);
+    }
+
+    /// <summary>
+    /// Creates "New folder" or "New Text Document.txt" (numbered if taken) in the folder shown, and selects it.
+    /// Returns the new item, for its name to be edited, or null if it wasn't created.
+    /// </summary>
+    public async Task<ItemViewModel?> CreateNewAsync(bool isFolder)
+    {
+        string folder = _location;
+        string name = NewItemNames.Unique(isFolder ? NewItemNames.Folder : NewItemNames.TextDocument, isFolder,
+            n => Path.Exists(Path.Combine(folder, n)));
+        string? newPath = await FileOperations.NewItemAsync(folder, name, isFolder, App.WindowHandle);
+        if (newPath is null)
+        {
+            return null;
+        }
+
+        await ShowResultAsync(folder, [newPath]);
+        return Items.FirstOrDefault(i => string.Equals(i.Item.Path, newPath, StringComparison.OrdinalIgnoreCase));
     }
 
     private static List<string> Paths(IReadOnlyList<ItemViewModel> items) => items.Select(i => i.Item.Path).ToList();

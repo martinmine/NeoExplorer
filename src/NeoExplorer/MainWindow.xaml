@@ -6,7 +6,7 @@
     xmlns:local="using:NeoExplorer"
     Title="NeoExplorer">
     <Window.SystemBackdrop>
-        <MicaBackdrop />
+        <DesktopAcrylicBackdrop />
     </Window.SystemBackdrop>
 
     <local:MainPage x:Name="Page" />

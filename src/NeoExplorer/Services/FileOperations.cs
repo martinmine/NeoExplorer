@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace NeoExplorer.Services;
 
 /// <summary>
-/// Copies, moves, renames and deletes through the shell (<c>IFileOperation</c>), like File Explorer does:
+/// Creates, copies, moves, renames and deletes through the shell (<c>IFileOperation</c>), like File Explorer does:
 /// with its progress dialog, its "Replace or Skip Files" dialog, the Recycle Bin, and undo (Ctrl+Z) in Explorer.
 /// Each operation runs on a thread of its own, so the window stays responsive while it runs.
 /// </summary>
@@ -17,6 +17,9 @@ public static class FileOperations
     private const uint FOFX_RECYCLEONDELETE = 0x80000;
     private const uint FOFX_ADDUNDORECORD = 0x20000000;
     private const uint UndoableFlags = FOF_ALLOWUNDO | FOFX_ADDUNDORECORD | FOFX_SHOWELEVATIONPROMPT;
+
+    private const uint FILE_ATTRIBUTE_DIRECTORY = 0x10;
+    private const uint FILE_ATTRIBUTE_NORMAL = 0x80;
 
     private const uint SSF_NOCONFIRMRECYCLE = 0x8000;
 
@@ -79,6 +82,17 @@ public static class FileOperations
         return results.Count > 0 ? results[0] : null;
     }
 
+    /// <summary>
+    /// Creates an empty file or folder and returns its path, or null if it wasn't created. Windows shows any error itself.
+    /// </summary>
+    public static async Task<string?> NewItemAsync(string folder, string name, bool isFolder, nint owner)
+    {
+        uint attributes = isFolder ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+        IReadOnlyList<string> results = await RunAsync(owner, UndoableFlags | FOF_RENAMEONCOLLISION, (operation, destination) =>
+            operation.NewItem(destination!, attributes, name, null, null), folder);
+        return results.Count > 0 ? results[0] : null;
+    }
+
     private static Task<IReadOnlyList<string>> RunAsync(nint owner, uint flags, Action<IFileOperation, IShellItem?> queue, string? destinationFolder = null) =>
         StaThread.Run<IReadOnlyList<string>>(() =>
         {
@@ -127,6 +141,8 @@ public static class FileOperations
 
         public void PostCopyItem(uint dwFlags, IShellItem psiItem, IShellItem psiDestinationFolder, string pszNewName, int hrCopy, IShellItem psiNewlyCreated) => Add(hrCopy, psiNewlyCreated);
 
+        public void PostNewItem(uint dwFlags, IShellItem psiDestinationFolder, string pszNewName, string pszTemplateName, uint dwFileAttributes, int hrNew, IShellItem psiNewItem) => Add(hrNew, psiNewItem);
+
         private void Add(int hresult, IShellItem? item)
         {
             if (hresult >= 0 && ShellItems.GetPath(item) is string path)
@@ -143,7 +159,6 @@ public static class FileOperations
         public void PreDeleteItem(uint dwFlags, IShellItem psiItem) { }
         public void PostDeleteItem(uint dwFlags, IShellItem psiItem, int hrDelete, IShellItem psiNewlyCreated) { }
         public void PreNewItem(uint dwFlags, IShellItem psiDestinationFolder, string pszNewName) { }
-        public void PostNewItem(uint dwFlags, IShellItem psiDestinationFolder, string pszNewName, string pszTemplateName, uint dwFileAttributes, int hrNew, IShellItem psiNewItem) { }
         public void UpdateProgress(uint iWorkTotal, uint iWorkSoFar) { }
         public void ResetTimer() { }
         public void PauseTimer() { }

@@ -59,6 +59,9 @@ public sealed partial class FolderView
             case VirtualKey.V when control && ViewModel.CanPasteHere:
                 _ = ViewModel.PasteAsync();
                 break;
+            case VirtualKey.N when control && shift && ViewModel.CanPasteHere:
+                _ = CreateNewAsync(isFolder: true);
+                break;
             default:
                 e.Handled = false;
                 break;
@@ -67,7 +70,7 @@ public sealed partial class FolderView
 
     /// <summary>
     /// Right-click, Shift+F10 or the menu key. On an item, shows the item menu; on empty space, the
-    /// folder menu (View, Sort by, Refresh, Paste) set on <see cref="Root"/> appears instead.
+    /// folder menu (View, Sort by, Refresh, Paste, New) set on <see cref="Root"/> appears instead.
     /// </summary>
     private void Items_ContextRequested(UIElement sender, ContextRequestedEventArgs args)
     {
@@ -245,11 +248,35 @@ public sealed partial class FolderView
         PasteSeparator.Visibility = paste;
         PasteMenuItem.Visibility = paste;
         PasteMenuItem.IsEnabled = ShellClipboard.HasFiles();
+        NewSeparator.Visibility = paste;
+        NewMenu.Visibility = paste;
     }
 
     private void Paste_Click(object sender, RoutedEventArgs e)
     {
         _ = ViewModel.PasteAsync();
+    }
+
+    private void NewFolder_Click(object sender, RoutedEventArgs e)
+    {
+        _ = CreateNewAsync(isFolder: true);
+    }
+
+    private void NewTextDocument_Click(object sender, RoutedEventArgs e)
+    {
+        _ = CreateNewAsync(isFolder: false);
+    }
+
+    /// <summary>
+    /// Creates a new item and starts editing its name, as File Explorer does.
+    /// </summary>
+    private async Task CreateNewAsync(bool isFolder)
+    {
+        if (await ViewModel.CreateNewAsync(isFolder) is ItemViewModel item)
+        {
+            // After the view has selected the new item and moved the focus to it, which would end the editing.
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => StartRename(item));
+        }
     }
 
     private void OnPreviewKeyDown(object sender, KeyRoutedEventArgs e)

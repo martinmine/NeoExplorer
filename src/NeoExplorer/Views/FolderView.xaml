@@ -104,6 +104,29 @@
                         <FontIcon Glyph="&#xE77F;" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
+                <MenuFlyoutSeparator x:Name="NewSeparator" />
+                <MenuFlyoutSubItem x:Name="NewMenu" Text="New">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE710;" />
+                    </MenuFlyoutSubItem.Icon>
+                    <MenuFlyoutItem
+                        AutomationProperties.AutomationId="NewFolderMenuItem"
+                        Click="NewFolder_Click"
+                        KeyboardAcceleratorTextOverride="Ctrl+Shift+N"
+                        Text="Folder">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE8F4;" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem
+                        AutomationProperties.AutomationId="NewTextDocumentMenuItem"
+                        Click="NewTextDocument_Click"
+                        Text="Text Document">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE8A5;" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                </MenuFlyoutSubItem>
             </MenuFlyout>
         </Grid.ContextFlyout>
 
