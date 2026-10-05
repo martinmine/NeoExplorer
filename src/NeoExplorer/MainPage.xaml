@@ -6,6 +6,7 @@
     xmlns:core="using:NeoExplorer.Core"
     xmlns:views="using:NeoExplorer.Views"
     xmlns:vm="using:NeoExplorer.ViewModels"
+    KeyboardAcceleratorPlacementMode="Hidden"
     KeyDown="Page_KeyDown">
 
     <Page.Resources>
