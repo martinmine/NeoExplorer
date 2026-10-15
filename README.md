@@ -1,5 +1,8 @@
 # NeoExplorer
 
+<img width="1143" height="780" alt="image" src="https://github.com/user-attachments/assets/d9feb70d-424e-41d4-bad1-ce2a9e178a6c" />
+
+
 A modern, minimal alternative to Windows File Explorer, built with WinUI 3 (Windows App SDK) and .NET 10, and packaged as MSIX.
 
 NeoExplorer aims to look and behave like File Explorer, without the parts most people don't use: there are no tabs, no command bar under the address bar and no status bar.
