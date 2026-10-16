@@ -417,10 +417,25 @@ public sealed partial class FolderView
         {
             e.Handled = true;
             _renaming = null;
-            item.IsRenaming = false;
+            HideRenameBox(item, FocusState.Keyboard);
             InvalidNameTip.IsOpen = false;
-            ActiveList.Focus(FocusState.Keyboard);
         }
+    }
+
+    /// <summary>
+    /// Stops showing the name box. If it has the focus, the focus goes back to the item first:
+    /// hiding the focused box would send the focus to the first control in the window, the Back button.
+    /// </summary>
+    private void HideRenameBox(ItemViewModel item, FocusState focusState)
+    {
+        if (FocusManager.GetFocusedElement(XamlRoot) is TextBox { DataContext: ItemViewModel focused }
+            && focused == item
+            && ActiveList.ContainerFromItem(item) is Control container)
+        {
+            container.Focus(focusState);
+        }
+
+        item.IsRenaming = false;
     }
 
     private void RenameBox_LostFocus(object sender, RoutedEventArgs e)
@@ -463,15 +478,16 @@ public sealed partial class FolderView
             return;
         }
 
+        // Cleared first, so the focus leaving the box below doesn't commit again. When the editing ended by
+        // clicking elsewhere, the focus stays where the click put it.
         _renaming = null;
-        item.IsRenaming = false;
+        HideRenameBox(item, FocusState.Programmatic);
         InvalidNameTip.IsOpen = false;
         string name = FileNameValidator.Normalize(text);
 
         // An empty name keeps the old one, as in File Explorer.
         if (name.Length == 0 || name == item.Name)
         {
-            ActiveList.Focus(FocusState.Programmatic);
             return;
         }
 
@@ -490,7 +506,6 @@ public sealed partial class FolderView
             return;
         }
 
-        ActiveList.Focus(FocusState.Programmatic);
         await ViewModel.RenameAsync(item, name);
     }
 
