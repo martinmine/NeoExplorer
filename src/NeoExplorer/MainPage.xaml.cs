@@ -101,8 +101,9 @@ public sealed partial class MainPage : Page
 
     private void Page_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        // Backspace goes back, unless a text box already used it for editing.
-        if (e.Key == VirtualKey.Back && ViewModel.GoBackCommand.CanExecute(null))
+        // Backspace goes back, but never while typing, e.g. a new name: a text box passes it on
+        // when there is nothing to delete, such as with the cursor at the start.
+        if (e.Key == VirtualKey.Back && e.OriginalSource is not TextBox && ViewModel.GoBackCommand.CanExecute(null))
         {
             e.Handled = true;
             ViewModel.GoBackCommand.Execute(null);
