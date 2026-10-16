@@ -368,7 +368,10 @@ public partial class FolderViewModel : ObservableObject
         string? newPath = await rename;
         item.PendingRename = null;
         item.ShowAs(newPath ?? oldPath);
-        await ShowResultAsync(folder, newPath is null ? [] : [newPath]);
+
+        // Selected again only if it still is: the editing may have ended by clicking another item, which keeps the selection.
+        bool stillSelected = SelectedItems.Contains(item);
+        await ShowResultAsync(folder, newPath is not null && stillSelected ? [newPath] : []);
     }
 
     /// <summary>
