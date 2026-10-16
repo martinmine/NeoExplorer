@@ -253,8 +253,11 @@
                                 Height="16"
                                 Opacity="{x:Bind IconOpacity, Mode=OneWay}"
                                 Source="{x:Bind Icon, Mode=OneWay}" />
+                            <!-- Left aligned, so only clicks on the name itself rename it. -->
                             <TextBlock
+                                x:Name="NameLabel"
                                 Grid.Column="1"
+                                HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 Text="{x:Bind Name}"
                                 TextTrimming="CharacterEllipsis"
@@ -347,7 +350,10 @@
                             Source="{x:Bind Icon, Mode=OneWay}"
                             Stretch="Uniform" />
                         <TextBlock
+                            x:Name="NameLabel"
                             Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
                             MaxLines="2"
                             Text="{x:Bind Name}"
                             TextAlignment="Center"

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Microsoft.UI.Input;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
@@ -317,6 +318,81 @@ public sealed partial class FolderView
         }
     }
 
+    /// <summary>
+    /// The item whose name label was pressed, if it was already the only selected item.
+    /// </summary>
+    private ItemViewModel? _pressedSelectedItem;
+
+    /// <summary>
+    /// The item a click will start renaming once the double-click time has passed.
+    /// </summary>
+    private ItemViewModel? _clickRenameItem;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _clickRenameTimer;
+
+    private static ItemViewModel? NameLabelItem(object source) =>
+        source is TextBlock { Name: "NameLabel", DataContext: ItemViewModel item } ? item : null;
+
+    /// <summary>
+    /// Clicking the name of the only selected item renames it, as in File Explorer. The click is
+    /// remembered here, and the rename starts on the tap if the item was selected before the press.
+    /// </summary>
+    private void Items_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        CancelClickRename();
+        var list = (ListViewBase)sender;
+        _pressedSelectedItem = e.Pointer.PointerDeviceType == PointerDeviceType.Mouse
+            && e.GetCurrentPoint(list).Properties.IsLeftButtonPressed
+            && e.KeyModifiers == VirtualKeyModifiers.None
+            && NameLabelItem(e.OriginalSource) is ItemViewModel item
+            && list.SelectedItems.Count == 1
+            && list.SelectedItems[0] == item
+                ? item
+                : null;
+    }
+
+    private void Items_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        ItemViewModel? item = _pressedSelectedItem;
+        _pressedSelectedItem = null;
+        if (item is null || NameLabelItem(e.OriginalSource) != item || item.IsRenaming)
+        {
+            return;
+        }
+
+        // Waits out the double-click time, so a double-click opens the item instead.
+        _clickRenameItem = item;
+        _clickRenameTimer ??= CreateClickRenameTimer();
+        _clickRenameTimer.Start();
+    }
+
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer CreateClickRenameTimer()
+    {
+        Microsoft.UI.Dispatching.DispatcherQueueTimer timer = DispatcherQueue.CreateTimer();
+        timer.Interval = TimeSpan.FromMilliseconds(GetDoubleClickTime());
+        timer.IsRepeating = false;
+        timer.Tick += ClickRenameTimer_Tick;
+        return timer;
+    }
+
+    private void ClickRenameTimer_Tick(Microsoft.UI.Dispatching.DispatcherQueueTimer sender, object args)
+    {
+        ItemViewModel? item = _clickRenameItem;
+        _clickRenameItem = null;
+        if (item is not null && Selection is [ItemViewModel selected] && selected == item && !item.IsRenaming)
+        {
+            StartRename(item);
+        }
+    }
+
+    /// <summary>
+    /// Stops a rename that a click was about to start, e.g. when the click turns out to be part of a double-click.
+    /// </summary>
+    private void CancelClickRename()
+    {
+        _clickRenameTimer?.Stop();
+        _clickRenameItem = null;
+    }
+
     private void RenameBox_KeyDown(object sender, KeyRoutedEventArgs e)
     {
         var box = (TextBox)sender;
@@ -441,4 +517,7 @@ public sealed partial class FolderView
 
         return null;
     }
+
+    [DllImport("user32.dll")]
+    private static extern uint GetDoubleClickTime();
 }

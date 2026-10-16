@@ -12,7 +12,7 @@ NeoExplorer aims to look and behave like File Explorer, without the parts most p
 - **Network:** computers found through network discovery, and their shared folders.
 - **Folder views:** Details (Name, Date modified, Type, Size, sortable by clicking a column header) and Medium, Large and Extra large icons with thumbnails.
 - **Search:** typing filters the current folder by name. Enter starts a recursive search, and results stream in with a Folder column.
-- **File operations:** cut, copy, paste, rename in place, delete to the Recycle Bin or permanently, new folder and new text file. These go through the Windows shell, so you get File Explorer's own progress and conflict dialogs and its undo.
+- **File operations:** cut, copy, paste, rename in place (F2, or clicking the name of the selected item), delete to the Recycle Bin or permanently, new folder and new text file. These go through the Windows shell, so you get File Explorer's own progress and conflict dialogs and its undo.
 - **Selection:** marquee (rectangle) selection, and clicking empty space clears the selection.
 - **Right-click menu:** Open (with the default app's icon), Open with, Cut, Copy, Paste, Rename, Properties and Delete.
 - **Drag and drop** inside NeoExplorer and to and from File Explorer, the desktop and other apps.

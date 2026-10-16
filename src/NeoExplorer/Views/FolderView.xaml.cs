@@ -27,6 +27,14 @@ public sealed partial class FolderView : UserControl
 
         _ = new MarqueeSelection(ItemsList, Root, MarqueeCanvas, MarqueeRectangle);
         _ = new MarqueeSelection(IconsGrid, Root, MarqueeCanvas, MarqueeRectangle);
+
+        // Added with handledEventsToo, since the items handle the presses and taps that select them.
+        foreach (ListViewBase list in new ListViewBase[] { ItemsList, IconsGrid })
+        {
+            list.AddHandler(PointerPressedEvent, new PointerEventHandler(Items_PointerPressed), handledEventsToo: true);
+            list.AddHandler(TappedEvent, new TappedEventHandler(Items_Tapped), handledEventsToo: true);
+        }
+
         InvalidNameTip.Subtitle = FileNameValidator.InvalidCharactersMessage;
         // Alt+Enter is taken before the list sees it, which it doesn't pass on with Alt held.
         PreviewKeyDown += OnPreviewKeyDown;
@@ -123,6 +131,7 @@ public sealed partial class FolderView : UserControl
 
     private void Items_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        CancelClickRename();
         if (ReferenceEquals(sender, ActiveList))
         {
             ViewModel.SelectedItems = ActiveList.SelectedItems.Cast<ItemViewModel>().ToList();
@@ -178,6 +187,8 @@ public sealed partial class FolderView : UserControl
 
     private void Items_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
+        CancelClickRename();
+
         // Ignore double-clicks on empty space between the items, and in a name being edited.
         if ((e.OriginalSource as FrameworkElement)?.DataContext is ItemViewModel { IsRenaming: false } item)
         {
