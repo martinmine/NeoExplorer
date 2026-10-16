@@ -255,13 +255,11 @@
                                 Height="16"
                                 Opacity="{x:Bind IconOpacity, Mode=OneWay}"
                                 Source="{x:Bind Icon, Mode=OneWay}" />
-                            <!-- The area that renames on a click: as wide as the name, with a little to spare,
-                                 and the full height of the row, so clicks just above or below the text count. -->
+                            <!-- The area that renames on a click: the whole Name column beside the icon, at the
+                                 full height of the row, so a click doesn't have to hit the text of a short name. -->
                             <Border
                                 x:Name="NameLabel"
                                 Grid.Column="1"
-                                Padding="0,0,6,0"
-                                HorizontalAlignment="Left"
                                 Background="Transparent"
                                 Visibility="{x:Bind IsNotRenaming, Mode=OneWay}">
                                 <TextBlock
