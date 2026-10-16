@@ -383,11 +383,16 @@ public sealed partial class FolderView
 
     private void ClickRenameTimer_Tick(Microsoft.UI.Dispatching.DispatcherQueueTimer sender, object args)
     {
+        // Checked now rather than cancelled on every selection change: reloading the folder can clear and restore
+        // the selection in the meantime, and may replace the item with a new one for the same path.
         ItemViewModel? item = _clickRenameItem;
         _clickRenameItem = null;
-        if (item is not null && Selection is [ItemViewModel selected] && selected == item && !item.IsRenaming)
+        if (item is not null
+            && Selection is [ItemViewModel selected]
+            && string.Equals(selected.Item.Path, item.Item.Path, StringComparison.OrdinalIgnoreCase)
+            && !selected.IsRenaming)
         {
-            StartRename(item);
+            StartRename(selected);
         }
     }
 

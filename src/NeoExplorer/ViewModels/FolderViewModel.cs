@@ -561,11 +561,21 @@ public partial class FolderViewModel : ObservableObject
         IEnumerable<ItemViewModel> items = IsSearchResults
             ? _searchResults
             : _folderItems.Where(i => NameFilter.Matches(i.Name, _filter));
-        Items = items.OrderBy(i => i.Item, new ItemComparer(SortColumn, SortDescending)).ToList();
+        List<ItemViewModel> sorted = items.OrderBy(i => i.Item, new ItemComparer(SortColumn, SortDescending)).ToList();
+
+        // Replacing the items rebuilds the list, which clears and restores the selection and moves the focus away
+        // for a moment, so clicks on the items can go astray. A reload often finds the same items, e.g. after
+        // a rename, whose new name already shows, and once more when the folder watcher notices it.
+        bool sameItems = sorted.SequenceEqual(Items);
+        if (!sameItems)
+        {
+            Items = sorted;
+        }
+
         UpdateMessage();
 
         List<ItemViewModel> selected = Items.Where(i => select.Contains(i.Item.Path)).ToList();
-        if (selected.Count > 0)
+        if (selected.Count > 0 && !(sameItems && selected.ToHashSet().SetEquals(SelectedItems)))
         {
             SelectionRestoring?.Invoke(this, new SelectionRequest(selected, reveal));
         }

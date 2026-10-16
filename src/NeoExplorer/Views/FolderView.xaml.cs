@@ -132,7 +132,6 @@ public sealed partial class FolderView : UserControl
 
     private void Items_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        CancelClickRename();
         if (ReferenceEquals(sender, ActiveList))
         {
             ViewModel.SelectedItems = ActiveList.SelectedItems.Cast<ItemViewModel>().ToList();
