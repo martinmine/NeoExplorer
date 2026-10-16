@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Input;
 using NeoExplorer.Core;
 using NeoExplorer.Services;
 using NeoExplorer.ViewModels;
+using Windows.Foundation;
 using Windows.System;
 
 namespace NeoExplorer;
@@ -13,9 +14,27 @@ public sealed partial class MainPage : Page
     public MainViewModel ViewModel { get; } = new();
 
     /// <summary>
-    /// The controls in the title bar that take clicks. The rest of the title bar moves the window.
+    /// Raised when the areas that move the window, or the controls in them, may have moved.
     /// </summary>
-    internal FrameworkElement[] TitleBarControls => [BackButton, ForwardButton, UpButton, RefreshButton, AddressBar, SearchBox];
+    internal event EventHandler? DragAreasChanged;
+
+    /// <summary>
+    /// The areas that move the window, relative to it: the title bar and the sidebar.
+    /// </summary>
+    internal Rect[] DragAreas => [BoundsOf(TitleBar), BoundsOf(SidebarView)];
+
+    /// <summary>
+    /// The parts of the drag areas that take clicks instead: the controls in the title bar, the sidebar items
+    /// and the sidebar's resize strip.
+    /// </summary>
+    internal Rect[] DragAreaControls =>
+    [
+        .. new FrameworkElement[] { BackButton, ForwardButton, UpButton, RefreshButton, AddressBar, SearchBox, SidebarSplitter }.Select(BoundsOf),
+        .. SidebarView.ControlBounds(),
+    ];
+
+    private static Rect BoundsOf(FrameworkElement element) =>
+        element.TransformToVisual(null).TransformBounds(new Rect(0, 0, element.ActualWidth, element.ActualHeight));
 
     public MainPage()
     {
@@ -58,6 +77,10 @@ public sealed partial class MainPage : Page
                 SearchBox.Text = "";
             }
         };
+
+        // Layout covers resizing, and sidebar folders being expanded or loaded; scrolling the sidebar needs its own event.
+        LayoutUpdated += (_, _) => DragAreasChanged?.Invoke(this, EventArgs.Empty);
+        SidebarView.Scroller.ViewChanged += (_, _) => DragAreasChanged?.Invoke(this, EventArgs.Empty);
 
         // Mouse back/forward buttons, even when a child control already handled the click.
         AddHandler(PointerPressedEvent, new PointerEventHandler(OnPointerPressed), handledEventsToo: true);

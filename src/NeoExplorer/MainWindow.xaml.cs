@@ -23,18 +23,14 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // The navigation bar replaces the title bar. All of it moves the window, except the controls in it,
-        // which are cut out as passthrough regions so they stay clickable.
+        // The navigation bar replaces the title bar. It and the empty space in the sidebar move the window, as
+        // Windows' own caption regions, so dragging, snapping and double-clicking behave like a real title bar.
+        // SetTitleBar isn't used, since it only takes one element; the controls are cut out as passthrough regions.
         ExtendsContentIntoTitleBar = true;
-        SetTitleBar(Page.TitleBar);
-        Page.TitleBar.SizeChanged += (_, _) => UpdateTitleBarPassthrough();
-        foreach (FrameworkElement control in Page.TitleBarControls)
-        {
-            control.SizeChanged += (_, _) => UpdateTitleBarPassthrough();
-        }
+        Page.DragAreasChanged += Page_DragAreasChanged;
 
-        // The regions are in physical pixels, so they move when the window goes to a monitor with another scale.
-        Page.Loaded += (_, _) => Page.XamlRoot.Changed += (_, _) => UpdateTitleBarPassthrough();
+        // Layout still runs while the window is torn down, when the regions can no longer be set.
+        Closed += (_, _) => Page.DragAreasChanged -= Page_DragAreasChanged;
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
         AppWindow.SetIcon("Assets/AppIcon.ico");
 
@@ -79,24 +75,44 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void UpdateTitleBarPassthrough()
+    private RectInt32[] _captionRects = [];
+    private RectInt32[] _passthroughRects = [];
+
+    /// <summary>
+    /// Updates the regions after layout or sidebar scrolling, only when they actually moved.
+    /// </summary>
+    private void Page_DragAreasChanged(object? sender, EventArgs e)
     {
         if (Page.XamlRoot is null)
         {
             return;
         }
 
+        // The regions are in physical pixels.
         double scale = Page.XamlRoot.RasterizationScale;
-        RectInt32[] rects = Page.TitleBarControls
-            .Select(control => control.TransformToVisual(null).TransformBounds(new Rect(0, 0, control.ActualWidth, control.ActualHeight)))
-            .Select(bounds => new RectInt32(
-                (int)Math.Round(bounds.X * scale),
-                (int)Math.Round(bounds.Y * scale),
-                (int)Math.Round(bounds.Width * scale),
-                (int)Math.Round(bounds.Height * scale)))
-            .ToArray();
-        InputNonClientPointerSource.GetForWindowId(AppWindow.Id).SetRegionRects(NonClientRegionKind.Passthrough, rects);
+        RectInt32[] captionRects = ToPixels(Page.DragAreas, scale);
+        RectInt32[] passthroughRects = ToPixels(Page.DragAreaControls, scale);
+        var source = InputNonClientPointerSource.GetForWindowId(AppWindow.Id);
+        if (!captionRects.SequenceEqual(_captionRects))
+        {
+            _captionRects = captionRects;
+            source.SetRegionRects(NonClientRegionKind.Caption, captionRects);
+        }
+
+        if (!passthroughRects.SequenceEqual(_passthroughRects))
+        {
+            _passthroughRects = passthroughRects;
+            source.SetRegionRects(NonClientRegionKind.Passthrough, passthroughRects);
+        }
     }
+
+    private static RectInt32[] ToPixels(IEnumerable<Rect> rects, double scale) => rects
+        .Select(bounds => new RectInt32(
+            (int)Math.Round(bounds.X * scale),
+            (int)Math.Round(bounds.Y * scale),
+            (int)Math.Round(bounds.Width * scale),
+            (int)Math.Round(bounds.Height * scale)))
+        .ToArray();
 
     [DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(nint hwnd);

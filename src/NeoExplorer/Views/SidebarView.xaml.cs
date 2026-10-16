@@ -1,10 +1,9 @@
-using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using NeoExplorer.ViewModels;
+using Windows.Foundation;
 
 namespace NeoExplorer.Views;
 
@@ -16,38 +15,40 @@ public sealed partial class SidebarView : UserControl
     public SidebarView()
     {
         InitializeComponent();
-
-        // Added with handledEventsToo, since the scroll viewer handles presses on empty space.
-        Scroller.AddHandler(PointerPressedEvent, new PointerEventHandler(Scroller_PointerPressed), handledEventsToo: true);
     }
 
     /// <summary>
-    /// Dragging the empty space around the items moves the window, like the title bar.
+    /// The parts of the sidebar that take clicks, the items and the scroll bar, relative to the window and
+    /// cut to what is scrolled into view. The empty space around them moves the window.
     /// </summary>
-    private void Scroller_PointerPressed(object sender, PointerRoutedEventArgs e)
+    public IEnumerable<Rect> ControlBounds()
     {
-        if (e.Pointer.PointerDeviceType == PointerDeviceType.Touch
-            || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed
-            || IsOnItemOrScrollBar(e.OriginalSource))
+        Rect viewport = Scroller.TransformToVisual(null).TransformBounds(new Rect(0, 0, Scroller.ActualWidth, Scroller.ActualHeight));
+        var pending = new Stack<DependencyObject>([Scroller]);
+        while (pending.TryPop(out DependencyObject? parent))
         {
-            return;
-        }
-
-        e.Handled = true;
-        WindowDrag.Start(this);
-    }
-
-    private bool IsOnItemOrScrollBar(object source)
-    {
-        for (var element = source as DependencyObject; element is not null && element != Scroller; element = VisualTreeHelper.GetParent(element))
-        {
-            if (element is TreeViewItem or ScrollBar)
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
-                return true;
+                DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+                if (child is not FrameworkElement { Visibility: Visibility.Visible } element)
+                {
+                    continue;
+                }
+
+                if (element is not (TreeViewItem or ScrollBar))
+                {
+                    pending.Push(element);
+                    continue;
+                }
+
+                Rect bounds = element.TransformToVisual(null).TransformBounds(new Rect(0, 0, element.ActualWidth, element.ActualHeight));
+                bounds.Intersect(viewport);
+                if (!bounds.IsEmpty && bounds.Width > 0 && bounds.Height > 0)
+                {
+                    yield return bounds;
+                }
             }
         }
-
-        return false;
     }
 
     /// <summary>

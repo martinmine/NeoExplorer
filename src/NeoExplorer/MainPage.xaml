@@ -101,7 +101,6 @@
              the address bar and the search box moves the window. -->
         <Grid
             x:Name="TitleBar"
-            x:FieldModifier="internal"
             Height="52"
             Background="Transparent"
             Padding="12,0,0,0"
