@@ -4,6 +4,8 @@ A modern, minimal alternative to Windows File Explorer, built with WinUI 3 (Wind
 
 NeoExplorer aims to look and behave like File Explorer, without the parts most people don't use: there are no tabs, no command bar under the address bar and no status bar.
 
+<img width="1143" height="780" alt="image" src="https://github.com/user-attachments/assets/d9feb70d-424e-41d4-bad1-ce2a9e178a6c" />
+
 ## Features
 
 - **Navigation bar in the title bar:** back, forward, up, refresh, a breadcrumb path you can click to type a path, and a search box. The window uses a Mica background.
