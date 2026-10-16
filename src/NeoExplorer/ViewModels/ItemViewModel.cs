@@ -9,7 +9,22 @@ public partial class ItemViewModel(FileSystemItem item, bool isSearchResult = fa
 {
     private uint _iconSize;
 
-    public FileSystemItem Item { get; } = item;
+    /// <summary>
+    /// Replaced when the item is renamed, so the new name shows before the folder is read again.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Name))]
+    public partial FileSystemItem Item { get; private set; } = item;
+
+    /// <summary>
+    /// The rename Windows is still carrying out, if any. Opening the item waits for it.
+    /// </summary>
+    public Task? PendingRename { get; set; }
+
+    /// <summary>
+    /// Shows the item under its new path, e.g. while Windows renames it, or back under the old one if that failed.
+    /// </summary>
+    public void ShowAs(string path) => Item = Item with { Name = System.IO.Path.GetFileName(path), Path = path };
 
     /// <summary>
     /// Search results show the folder each item is in.

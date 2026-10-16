@@ -259,7 +259,7 @@
                                 Grid.Column="1"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                Text="{x:Bind Name}"
+                                Text="{x:Bind Name, Mode=OneWay}"
                                 TextTrimming="CharacterEllipsis"
                                 Visibility="{x:Bind IsNotRenaming, Mode=OneWay}" />
                             <TextBox
@@ -355,7 +355,7 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Top"
                             MaxLines="2"
-                            Text="{x:Bind Name}"
+                            Text="{x:Bind Name, Mode=OneWay}"
                             TextAlignment="Center"
                             TextTrimming="CharacterEllipsis"
                             TextWrapping="Wrap"

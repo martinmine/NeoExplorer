@@ -241,6 +241,13 @@ public partial class FolderViewModel : ObservableObject
     /// </summary>
     public void Open(ItemViewModel item)
     {
+        // Opened right after renaming it: open it once it has its new name.
+        if (item.PendingRename is { IsCompleted: false } rename)
+        {
+            _ = OpenAfterAsync(item, rename);
+            return;
+        }
+
         if (item.Item.IsFolder)
         {
             _navigate(item.Item.Path);
@@ -256,6 +263,12 @@ public partial class FolderViewModel : ObservableObject
         {
             // Windows has already told the user, or they cancelled the "Open with" dialog.
         }
+    }
+
+    private async Task OpenAfterAsync(ItemViewModel item, Task rename)
+    {
+        await rename;
+        Open(item);
     }
 
     /// <summary>
@@ -346,8 +359,16 @@ public partial class FolderViewModel : ObservableObject
     /// </summary>
     public async Task RenameAsync(ItemViewModel item, string newName)
     {
-        string? newPath = await FileOperations.RenameAsync(item.Item.Path, newName, App.WindowHandle);
-        await ShowResultAsync(Path.GetDirectoryName(item.Item.Path), newPath is null ? [] : [newPath]);
+        // The new name shows right away, as in File Explorer, rather than when Windows is done and the folder is read again.
+        string oldPath = item.Item.Path;
+        string folder = Path.GetDirectoryName(oldPath) ?? "";
+        item.ShowAs(Path.Combine(folder, newName));
+        Task<string?> rename = FileOperations.RenameAsync(oldPath, newName, App.WindowHandle);
+        item.PendingRename = rename;
+        string? newPath = await rename;
+        item.PendingRename = null;
+        item.ShowAs(newPath ?? oldPath);
+        await ShowResultAsync(folder, newPath is null ? [] : [newPath]);
     }
 
     /// <summary>

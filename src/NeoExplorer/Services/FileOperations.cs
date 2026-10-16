@@ -9,6 +9,7 @@ namespace NeoExplorer.Services;
 /// </summary>
 public static class FileOperations
 {
+    private const uint FOF_SILENT = 0x4;
     private const uint FOF_RENAMEONCOLLISION = 0x8;
     private const uint FOF_NOCONFIRMATION = 0x10;
     private const uint FOF_ALLOWUNDO = 0x40;
@@ -77,7 +78,8 @@ public static class FileOperations
     /// </summary>
     public static async Task<string?> RenameAsync(string path, string newName, nint owner)
     {
-        IReadOnlyList<string> results = await RunAsync(owner, UndoableFlags, (operation, _) =>
+        // Without a progress window, as in File Explorer: it would take the focus from the folder while the name changes.
+        IReadOnlyList<string> results = await RunAsync(owner, UndoableFlags | FOF_SILENT, (operation, _) =>
             operation.RenameItem(ShellItems.Create(path), newName, null));
         return results.Count > 0 ? results[0] : null;
     }
