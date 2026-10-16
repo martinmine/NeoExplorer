@@ -44,7 +44,8 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <ScrollViewer>
+    <!-- The background lets presses on the empty space below the items move the window. -->
+    <ScrollViewer x:Name="Scroller" Background="Transparent">
         <StackPanel Padding="0,4">
             <TreeView
                 x:Name="QuickAccessTree"

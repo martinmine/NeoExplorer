@@ -12,6 +12,11 @@ public sealed partial class MainPage : Page
 {
     public MainViewModel ViewModel { get; } = new();
 
+    /// <summary>
+    /// The controls in the title bar that take clicks. The rest of the title bar moves the window.
+    /// </summary>
+    internal FrameworkElement[] TitleBarControls => [BackButton, ForwardButton, UpButton, RefreshButton, AddressBar, SearchBox];
+
     public MainPage()
     {
         InitializeComponent();

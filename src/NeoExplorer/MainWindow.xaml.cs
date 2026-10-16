@@ -1,9 +1,11 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using NeoExplorer.Services;
 using NeoExplorer.ViewModels;
+using Windows.Foundation;
 using Windows.Graphics;
 
 namespace NeoExplorer;
@@ -21,10 +23,18 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // The navigation bar replaces the title bar. Only DragRegion moves the window,
-        // so the rest of the bar stays clickable.
+        // The navigation bar replaces the title bar. All of it moves the window, except the controls in it,
+        // which are cut out as passthrough regions so they stay clickable.
         ExtendsContentIntoTitleBar = true;
-        SetTitleBar(Page.DragRegion);
+        SetTitleBar(Page.TitleBar);
+        Page.TitleBar.SizeChanged += (_, _) => UpdateTitleBarPassthrough();
+        foreach (FrameworkElement control in Page.TitleBarControls)
+        {
+            control.SizeChanged += (_, _) => UpdateTitleBarPassthrough();
+        }
+
+        // The regions are in physical pixels, so they move when the window goes to a monitor with another scale.
+        Page.Loaded += (_, _) => Page.XamlRoot.Changed += (_, _) => UpdateTitleBarPassthrough();
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
         AppWindow.SetIcon("Assets/AppIcon.ico");
 
@@ -67,6 +77,25 @@ public sealed partial class MainWindow : Window
         {
             Settings.WindowSize = (AppWindow.Size.Width / Scale, AppWindow.Size.Height / Scale);
         }
+    }
+
+    private void UpdateTitleBarPassthrough()
+    {
+        if (Page.XamlRoot is null)
+        {
+            return;
+        }
+
+        double scale = Page.XamlRoot.RasterizationScale;
+        RectInt32[] rects = Page.TitleBarControls
+            .Select(control => control.TransformToVisual(null).TransformBounds(new Rect(0, 0, control.ActualWidth, control.ActualHeight)))
+            .Select(bounds => new RectInt32(
+                (int)Math.Round(bounds.X * scale),
+                (int)Math.Round(bounds.Y * scale),
+                (int)Math.Round(bounds.Width * scale),
+                (int)Math.Round(bounds.Height * scale)))
+            .ToArray();
+        InputNonClientPointerSource.GetForWindowId(AppWindow.Id).SetRegionRects(NonClientRegionKind.Passthrough, rects);
     }
 
     [DllImport("user32.dll")]

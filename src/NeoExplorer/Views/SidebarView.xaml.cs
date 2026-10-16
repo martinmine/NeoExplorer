@@ -1,4 +1,9 @@
+using Microsoft.UI.Input;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using NeoExplorer.ViewModels;
 
 namespace NeoExplorer.Views;
@@ -11,6 +16,38 @@ public sealed partial class SidebarView : UserControl
     public SidebarView()
     {
         InitializeComponent();
+
+        // Added with handledEventsToo, since the scroll viewer handles presses on empty space.
+        Scroller.AddHandler(PointerPressedEvent, new PointerEventHandler(Scroller_PointerPressed), handledEventsToo: true);
+    }
+
+    /// <summary>
+    /// Dragging the empty space around the items moves the window, like the title bar.
+    /// </summary>
+    private void Scroller_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (e.Pointer.PointerDeviceType == PointerDeviceType.Touch
+            || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed
+            || IsOnItemOrScrollBar(e.OriginalSource))
+        {
+            return;
+        }
+
+        e.Handled = true;
+        WindowDrag.Start(this);
+    }
+
+    private bool IsOnItemOrScrollBar(object source)
+    {
+        for (var element = source as DependencyObject; element is not null && element != Scroller; element = VisualTreeHelper.GetParent(element))
+        {
+            if (element is TreeViewItem or ScrollBar)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

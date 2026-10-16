@@ -97,9 +97,13 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Navigation bar, drawn in the window's title bar area. -->
+        <!-- Navigation bar, drawn in the window's title bar area. Everything but the buttons,
+             the address bar and the search box moves the window. -->
         <Grid
+            x:Name="TitleBar"
+            x:FieldModifier="internal"
             Height="52"
+            Background="Transparent"
             Padding="12,0,0,0"
             ColumnSpacing="12">
             <Grid.ColumnDefinitions>
@@ -162,6 +166,7 @@
             </StackPanel>
 
             <Border
+                x:Name="AddressBar"
                 Grid.Column="1"
                 Height="34"
                 Background="{ThemeResource ControlFillColorDefaultBrush}"
@@ -232,12 +237,7 @@
                 TextChanged="SearchBox_TextChanged"
                 ToolTipService.ToolTip="Type to filter this folder. Press Enter to also search subfolders." />
 
-            <!-- Drag area for moving the window; the system caption buttons are drawn on top of it. -->
-            <Border
-                x:Name="DragRegion"
-                x:FieldModifier="internal"
-                Grid.Column="3"
-                Background="Transparent" />
+            <!-- Column 3 is left free for the system caption buttons. -->
         </Grid>
 
         <Grid Grid.Row="1">
