@@ -336,8 +336,21 @@ public sealed partial class FolderView
     private ItemViewModel? _clickRenameItem;
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? _clickRenameTimer;
 
-    private static ItemViewModel? NameLabelItem(object source) =>
-        source is TextBlock { Name: "NameLabel", DataContext: ItemViewModel item } ? item : null;
+    /// <summary>
+    /// The item whose name area (the text or the space around it) <paramref name="source"/> is in, if any.
+    /// </summary>
+    private static ItemViewModel? NameLabelItem(object source)
+    {
+        for (var element = source as DependencyObject; element is not null and not SelectorItem; element = VisualTreeHelper.GetParent(element))
+        {
+            if (element is FrameworkElement { Name: "NameLabel", DataContext: ItemViewModel item })
+            {
+                return item;
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Clicking the name of the only selected item renames it, as in File Explorer. The click is
@@ -347,7 +360,7 @@ public sealed partial class FolderView
     {
         CancelClickRename();
         var list = (ListViewBase)sender;
-        _pressedSelectedItem = e.Pointer.PointerDeviceType == PointerDeviceType.Mouse
+        _pressedSelectedItem = e.Pointer.PointerDeviceType is PointerDeviceType.Mouse or PointerDeviceType.Touchpad
             && e.GetCurrentPoint(list).Properties.IsLeftButtonPressed
             && e.KeyModifiers == VirtualKeyModifiers.None
             && NameLabelItem(e.OriginalSource) is ItemViewModel item
@@ -359,9 +372,11 @@ public sealed partial class FolderView
 
     private void Items_Tapped(object sender, TappedRoutedEventArgs e)
     {
+        // A tap is only raised if the pointer stayed near where it was pressed, so the release isn't
+        // required to be on the name too: it can slip just past a short name.
         ItemViewModel? item = _pressedSelectedItem;
         _pressedSelectedItem = null;
-        if (item is null || NameLabelItem(e.OriginalSource) != item || item.IsRenaming)
+        if (item is null || item.IsRenaming)
         {
             return;
         }
