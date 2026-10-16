@@ -36,7 +36,8 @@ public sealed partial class FolderView : UserControl
         }
 
         InvalidNameTip.Subtitle = FileNameValidator.InvalidCharactersMessage;
-        // Alt+Enter is taken before the list sees it, which it doesn't pass on with Alt held.
+        // Enter and Alt+Enter are taken before the list sees them: the items mark Enter as handled,
+        // and the list doesn't pass it on with Alt held.
         PreviewKeyDown += OnPreviewKeyDown;
     }
 

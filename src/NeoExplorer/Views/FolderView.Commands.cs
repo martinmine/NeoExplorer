@@ -42,9 +42,6 @@ public sealed partial class FolderView
         e.Handled = true;
         switch (e.Key)
         {
-            case VirtualKey.Enter when selection.Count > 0:
-                ViewModel.Open(selection);
-                break;
             case VirtualKey.F2 when selection.Count == 1:
                 StartRename(selection[0]);
                 break;
@@ -282,10 +279,20 @@ public sealed partial class FolderView
 
     private void OnPreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (e.Key == VirtualKey.Enter && IsKeyDown(VirtualKey.Menu) && e.OriginalSource is not TextBox && Selection is [ItemViewModel first, ..])
+        if (e.Key != VirtualKey.Enter || e.OriginalSource is TextBox || Selection is not [ItemViewModel first, ..] selection)
+        {
+            return;
+        }
+
+        if (IsKeyDown(VirtualKey.Menu))
         {
             e.Handled = true;
             ShowProperties(first);
+        }
+        else if (e.OriginalSource is SelectorItem or ListViewBase)
+        {
+            e.Handled = true;
+            ViewModel.Open(selection);
         }
     }
 
